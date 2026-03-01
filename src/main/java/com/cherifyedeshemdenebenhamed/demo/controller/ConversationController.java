@@ -7,7 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 @RestController
 @RequestMapping("/api/conversations")
 public class ConversationController {
@@ -24,7 +24,12 @@ public ResponseEntity<ConversationResponse> create(@Valid @RequestBody CreateCon
     ConversationResponse res = conversationService.createConversation(req, currentUserId);
     return ResponseEntity.ok(res);
 }
-
+@GetMapping
+public ResponseEntity<List<ConversationResponse>> myConversations() {
+    Long currentUserId = 1L; // TEMPORAIRE (jusqu’à la vraie auth)
+    List<ConversationResponse> res = conversationService.getUserConversations(currentUserId);
+    return ResponseEntity.ok(res);
+}
 
     
 }
