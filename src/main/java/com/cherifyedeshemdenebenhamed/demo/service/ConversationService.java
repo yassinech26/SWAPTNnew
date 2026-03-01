@@ -10,9 +10,17 @@ import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class ConversationService {
+    public List<ConversationResponse> getUserConversations(Long currentUserId) {
+    return conversationRepository
+            .findByUser1_IdOrUser2_Id(currentUserId, currentUserId)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+}
 
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
