@@ -10,7 +10,8 @@ import jakarta.validation.constraints.Size;
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_users_email", columnNames = "email") //empeche 2 utulisateur d'avoir le meme email
+                @UniqueConstraint(name = "uk_users_email", columnNames = "email") ,//empeche 2 utulisateur d'avoir le meme email
+                @UniqueConstraint(name = "uk_users_full_name", columnNames = "full_name") //empeche 2 utulisateur d'avoir le meme full name
         }
 )
 public class User {
