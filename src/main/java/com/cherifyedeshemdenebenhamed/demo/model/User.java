@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
         name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_users_email", columnNames = "email") ,//empeche 2 utulisateur d'avoir le meme email
-                @UniqueConstraint(name = "uk_users_full_name", columnNames = "full_name") //empeche 2 utulisateur d'avoir le meme full name
+
         }
 )
 public class User {
@@ -24,7 +24,7 @@ public class User {
     // Full name of the user
     @NotBlank
     @Size(max = 120)
-    @Column(unique = true , name = "full_name", nullable = false, length = 120)
+    @Column( name = "full_name", nullable = false, length = 120)
     private String fullName;
     //full name must be unique because we will use it as username for login (as per your diagram)
 
