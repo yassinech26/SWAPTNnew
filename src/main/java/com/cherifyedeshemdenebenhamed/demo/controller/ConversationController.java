@@ -2,6 +2,8 @@ package com.cherifyedeshemdenebenhamed.demo.controller;
 
 import com.cherifyedeshemdenebenhamed.demo.dto.ConversationResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.CreateConversationRequest;
+import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
+import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
 import com.cherifyedeshemdenebenhamed.demo.service.ConversationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,27 @@ public ResponseEntity<List<ConversationResponse>> myConversations() {
     List<ConversationResponse> res = conversationService.getUserConversations(currentUserId);
     return ResponseEntity.ok(res);
 }
+@GetMapping("/{id}")
+public ResponseEntity<ConversationResponse> getConversationById(@PathVariable Long id, Authentication authentication) {
+    Long currentUserId = 1L;  // Utilisateur statique pour test (remplacer plus tard avec JWT ou sécurité)
 
-    
+    // Recherche la conversation par ID
+    Conversation conversation = conversationService.getConversationById(id);
+
+    // Vérifie si l'utilisateur est un participant (user1 ou user2)
+    if (!conversation.getUser1().getId().equals(currentUserId) && !conversation.getUser2().getId().equals(currentUserId)) {
+        throw new ForbiddenException("You are not a participant in this conversation");
+    }
+
+    // Retourne la conversation sous forme de DTO
+    ConversationResponse response = new ConversationResponse(
+            conversation.getId(),
+            conversation.getListingId(),
+            conversation.getUser1().getId(),
+            conversation.getUser2().getId(),
+            conversation.getCreatedAt()
+    );
+
+    return ResponseEntity.ok(response);
+}
 }

@@ -76,4 +76,10 @@ public class ConversationService {
                 c.getCreatedAt()
         );
     }
+    public Conversation getConversationById(Long id) {
+    return conversationRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Conversation not found"));
+}
+
+
 }

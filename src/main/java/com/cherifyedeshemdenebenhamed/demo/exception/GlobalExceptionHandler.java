@@ -18,6 +18,10 @@ public class GlobalExceptionHandler {
                 "error", ex.getMessage()
         ));
     }
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<?> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(403).body(ex.getMessage());
+    }
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
