@@ -1,8 +1,8 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
-
 import com.cherifyedeshemdenebenhamed.demo.dto.ConversationResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.CreateConversationRequest;
 import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
+import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
 import com.cherifyedeshemdenebenhamed.demo.service.ConversationService;
 import jakarta.validation.Valid;
@@ -23,6 +23,18 @@ public class ConversationController {
         @PostMapping
 public ResponseEntity<ConversationResponse> create(@Valid @RequestBody CreateConversationRequest req) {
     Long currentUserId = 1L; // TEMP pour test
+    if (req.getListingId() == null) {
+        throw new BadRequestException("listingId is required");
+    }
+
+    if (req.getOtherUserId() == null) {
+        throw new BadRequestException("otherUserId is required");
+    }
+
+    // Empêcher la conversation avec soi-même
+    if (req.getOtherUserId().equals(currentUserId)) {
+        throw new BadRequestException("You cannot start a conversation with yourself");
+    }
     ConversationResponse res = conversationService.createConversation(req, currentUserId);
     return ResponseEntity.ok(res);
 }

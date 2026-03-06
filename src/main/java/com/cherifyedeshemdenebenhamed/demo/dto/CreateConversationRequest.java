@@ -1,15 +1,14 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
-import jakarta.validation.constraints.NotNull;
-
 public class CreateConversationRequest {
 
-    @NotNull
+    @NotNull(message = "listingId is required")
     private Long listingId;
 
-    @NotNull
+    @NotNull(message = "otherUserId is required")
     private Long otherUserId;
 
+    // Getters et setters
     public Long getListingId() {
         return listingId;
     }
