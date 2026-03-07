@@ -1,0 +1,13 @@
+[33m9269f92[m[33m ([m[1;31morigin/develop[m[33m, [m[1;32mdevelop[m[33m)[m Merge pull request #4 from yassinech26/feature/conversation-mvp(conv 05)
+[33m107fdaa[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/conversation-mvp[m[33m, [m[1;31morigin/feature/conversation-mvp[m[33m)[m Temp commit before switching to develop
+[33m8622611[m Merge pull request #3 from yassinech26/feature/conversation-mvp(conv 04)
+[33m154fa1e[m ajout de list user conversations (inbox)
+[33m376c49d[m Merge pull request #2 from yassinech26/feature/conversation-mvp
+[33m1c81c44[m CONV-02: Create Conversation API implemented and tested
+[33m804d13a[m Merge pull request #1 from yassinech26/feature/conversation-mvp
+[33m9b5cae0[m CONV-01: Add Conversation entity and repository with unique constraint
+[33mf72c7cb[m Add empty packages placeholders
+[33m54bb534[m spring boot starter
+[33mc063562[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add empty packages placeholders
+[33m4af9ba2[m[33m ([m[1;32mmain[m[33m)[m spring boot starter
+[33mc7d73e1[m Create test
