@@ -40,7 +40,9 @@ public class Conversation {
     public Long getId() {
         return id;
     }
-
+    public void setId(Long id) {
+        this.id = id;
+    }
     public User getUser1() {
         return user1;
     }
