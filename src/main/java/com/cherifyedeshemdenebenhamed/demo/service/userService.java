@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.RegisterRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.RegisterResponse;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
@@ -34,17 +36,16 @@ public class userService {
         return new RegisterResponse(saved.getId(), saved.getFullName(), saved.getEmail());
     }
 
+    public LoginResponse login(LoginRequest request) {
+        User user = UserRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
+        }
 
-
-
-
-
-
-
-
-
-
+        return new LoginResponse("Login successful");
+    }
 
 
 

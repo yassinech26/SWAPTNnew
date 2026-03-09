@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.RegisterRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.RegisterResponse;
 import com.cherifyedeshemdenebenhamed.demo.service.userService;
@@ -22,6 +24,12 @@ public class userController {
     @ResponseStatus(HttpStatus.CREATED)
     public RegisterResponse signup(@Valid @RequestBody RegisterRequest request) {
         return UserService.register(request);
+    }
+
+    @PostMapping("/login")
+    @ResponseStatus(HttpStatus.OK)
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        return UserService.login(request);
     }
 
 
