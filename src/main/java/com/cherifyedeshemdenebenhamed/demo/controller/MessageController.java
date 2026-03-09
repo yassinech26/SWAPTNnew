@@ -36,7 +36,8 @@ public class MessageController {
     // GET /api/messages/conversation/{id} - Récupérer les messages d'une conversation
     @GetMapping("/conversation/{id}")
     public ResponseEntity<?> getMessagesByConversation(@PathVariable Long id) {
+        Long currentUserId = 1L;  // Static user for test (replace with JWT or security later)
         // Récupérer les messages par conversation
-        return ResponseEntity.ok(messageService.getMessagesByConversation(id));
+        return ResponseEntity.ok(messageService.getMessagesByConversation(id , currentUserId));
     }
 }
