@@ -21,7 +21,6 @@ public class userService {
         this.UserRepository = UserRepository;
     }
     public RegisterResponse register(RegisterRequest request) {
-
         if (UserRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
         }
@@ -46,14 +45,4 @@ public class userService {
 
         return new LoginResponse("Login successful");
     }
-
-
-
-    /* public String publicMessage() {
-        return "PUBLIC OK ✅ (no auth needed)";
-    }
-
-    public String privateMessage() {
-        return "PRIVATE OK 🔒 (auth required)";
-    }*/
 }

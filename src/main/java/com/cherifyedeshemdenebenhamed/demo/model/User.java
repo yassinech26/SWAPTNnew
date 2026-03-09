@@ -5,6 +5,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(
@@ -14,7 +20,7 @@ import jakarta.validation.constraints.Size;
 
         }
 )
-public class User {
+public class User implements UserDetails {
 
     // Primary key (auto-generated)
     @Id
@@ -70,6 +76,7 @@ public class User {
         ACTIVE,
         BANNED
     }
+    private String role = "USER";
 
     // --- Constructors ---
     public User() {}
@@ -83,7 +90,20 @@ public class User {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+    }
+
+    @Override
+    public String getUsername() {
+        return email; // ici on utilise email comme username Spring Security
+    }
+
     public String getPassword() { return password; }
+
+    
+
     public void setPassword(String password) { this.password = password; }
 
     public String getPhone() { return phone; }
