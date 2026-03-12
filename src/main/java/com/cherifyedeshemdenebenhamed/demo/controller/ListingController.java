@@ -23,8 +23,7 @@ public class ListingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
-        Listing listing = listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found with id: " + id));
+        Listing listing = listingService.getListingById(id);
         return ResponseEntity.ok(listing);
     }
 
@@ -35,8 +34,7 @@ public class ListingController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
-        Listing existingListing = listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found with id: " + id));
+        Listing existingListing = listingService.getListingById(id);
 
         existingListing.setTitle(listingDetails.getTitle());
         existingListing.setDescription(listingDetails.getDescription());
@@ -49,9 +47,7 @@ public class ListingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteListing(@PathVariable Long id) {
-        listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found with id: " + id));
-        
+        listingService.getListingById(id);
         listingService.deleteListing(id);
         return ResponseEntity.ok().build();
     }
