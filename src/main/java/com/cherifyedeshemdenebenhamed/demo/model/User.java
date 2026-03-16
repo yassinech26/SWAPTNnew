@@ -76,7 +76,8 @@ public class User implements UserDetails {
         ACTIVE,
         BANNED
     }
-    private String role = "USER";
+    //private String role = "USER";
+    // on ne utulise pas les roles pour le moment on va juste donner a tous les utilisateurs le role USER dans getAuthorities() et on verra plus tard comment faire pour les roles admin ou autre
 
     // --- Constructors ---
     public User() {}
@@ -92,7 +93,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override

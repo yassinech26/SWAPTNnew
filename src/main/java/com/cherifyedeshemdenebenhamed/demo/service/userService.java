@@ -1,5 +1,6 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
+import com.cherifyedeshemdenebenhamed.demo.configuration.JwtService;
 import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.RegisterRequest;
@@ -15,8 +16,10 @@ import org.springframework.web.server.ResponseStatusException;
 public class userService {
     usersRepository UserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public userService(usersRepository UserRepository, PasswordEncoder passwordEncoder) {
+    public userService(usersRepository UserRepository, PasswordEncoder passwordEncoder , JwtService jwtService) {
+        this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.UserRepository = UserRepository;
     }
@@ -42,7 +45,13 @@ public class userService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
+        String token = jwtService.generateToken(user);
+        return new LoginResponse("Login successful",token);
+    }
 
-        return new LoginResponse("Login successful");
+
+    public User getUserById(Long id) {
+        return UserRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 }
