@@ -1,9 +1,6 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
-import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
-import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
-import com.cherifyedeshemdenebenhamed.demo.dto.RegisterRequest;
-import com.cherifyedeshemdenebenhamed.demo.dto.RegisterResponse;
+import com.cherifyedeshemdenebenhamed.demo.dto.*;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.service.userService;
 import jakarta.validation.Valid;
@@ -45,6 +42,20 @@ public class userController {
 
         return requestedUser;
     }
+
+    @PutMapping("/users/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponse updateProfile(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
+        return UserService.updateProfile(id, request);
+    }
+
+    /*  eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJjaGVyaWZ5YXNzaW5lZUBnbWFpbC5jb20iLCJpYXQiOjE3NzM3NjE5NTMsImV4cCI6MTc3Mzg0ODM1M30.4TakB6UNpmCNzwXWODgyhDotVF-0EHRGzLMweMm3y9K7U9udzd3RbUcyBayCaNGJ04-P1lb8_QYNgLkvD5yFRQ
+    */ /*eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtZWhkaXllZGVzQGdtYWlsLmNvbSIsImlhdCI6MTc3Mzc2Mjc2NCwiZXhwIjoxNzczODQ5MTY0fQ._lzQ916FLGCZcFGqN_UOQUg09shNhNDdXddAf_zL2PgbTNgvRdAhY6vvPsMcm9u4tX7unbS-wMe1aIioQ7BejA*/
+
+
+
+
+
 
 
 

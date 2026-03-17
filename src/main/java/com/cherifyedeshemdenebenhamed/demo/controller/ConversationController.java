@@ -6,6 +6,7 @@ import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.service.ConversationService;
 import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
 
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+
 @RestController
 @RequestMapping("/api/conversations")
 public class ConversationController {
@@ -23,17 +27,24 @@ public class ConversationController {
     private final ListingService listingService;  // Declare the ListingService
     private final ConversationService conversationService;
 
+
+
     // Constructor injection of both services
     @Autowired
     public ConversationController(ConversationService conversationService, ListingService listingService) {
         this.conversationService = conversationService;
         this.listingService = listingService;  // Initialize the ListingService here
     }
+    // Temporary method to get the current authenticated user (replace with real auth later)
+    private User getCurrentAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (User) authentication.getPrincipal();
+    }
 
     // POST method to create a conversation
     @PostMapping
     public ResponseEntity<ConversationResponse> create(@Valid @RequestBody CreateConversationRequest req) {
-        Long currentUserId = 1L; // TEMP pour test
+        Long currentUserId = getCurrentAuthenticatedUser().getId();
 
         // Validate listingId is present
         if (req.getListingId() == null) {
@@ -63,7 +74,7 @@ public class ConversationController {
     // GET method to retrieve user's conversations
     @GetMapping
     public ResponseEntity<List<ConversationResponse>> myConversations() {
-        Long currentUserId = 1L; // Temporary (replace with real auth later)
+        Long currentUserId = getCurrentAuthenticatedUser().getId(); // Temporary (replace with real auth later)
         List<ConversationResponse> res = conversationService.getUserConversations(currentUserId);
         return ResponseEntity.ok(res);
     }
@@ -71,7 +82,8 @@ public class ConversationController {
     // GET method to retrieve a conversation by ID
     @GetMapping("/{id}")
     public ResponseEntity<ConversationResponse> getConversationById(@PathVariable Long id) {
-        Long currentUserId = 1L;  // Static user for test (replace with JWT or security later)
+
+        Long currentUserId = getCurrentAuthenticatedUser().getId();  // Static user for test (replace with JWT or security later)
 
         // Fetch the conversation by ID
         Conversation conversation = conversationService.getConversationById(id);
