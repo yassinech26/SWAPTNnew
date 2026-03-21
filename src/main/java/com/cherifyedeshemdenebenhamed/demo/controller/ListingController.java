@@ -23,7 +23,8 @@ public class ListingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
-        Listing listing = listingService.getListingById(id);
+        Listing listing = listingService.getListingById(id)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
         return ResponseEntity.ok(listing);
     }
 
@@ -34,7 +35,8 @@ public class ListingController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
-        Listing existingListing = listingService.getListingById(id);
+        Listing existingListing = listingService.getListingById(id)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
 
         existingListing.setTitle(listingDetails.getTitle());
         existingListing.setDescription(listingDetails.getDescription());
@@ -47,8 +49,24 @@ public class ListingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteListing(@PathVariable Long id) {
-        listingService.getListingById(id);
+        listingService.getListingById(id)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
         listingService.deleteListing(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Listing>> searchListings(@RequestParam String title) {
+        return ResponseEntity.ok(listingService.searchByTitle(title));
+    }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<Listing>> filterByCategory(@PathVariable String category) {
+        return ResponseEntity.ok(listingService.filterByCategory(category));
+    }
+
+    @GetMapping("/price")
+    public ResponseEntity<List<Listing>> filterByPrice(@RequestParam Double min, @RequestParam Double max) {
+        return ResponseEntity.ok(listingService.filterByPrice(min, max));
     }
 }
