@@ -8,7 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-
     // It is mainly used to avoid NullPointerException (NPE) and make the code more
     // expressive when dealing with values that might be absent.
     // This method will return an Optional containing the User if found, or an empty
