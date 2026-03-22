@@ -1,15 +1,15 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import com.cherifyedeshemdenebenhamed.demo.repository.usersRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final usersRepository UserRepository;
+    private final UserRepository UserRepository;
 
-    public CustomUserDetailsService(usersRepository UserRepository ) {
+    public CustomUserDetailsService(UserRepository UserRepository ) {
         this.UserRepository = UserRepository;
     }
 

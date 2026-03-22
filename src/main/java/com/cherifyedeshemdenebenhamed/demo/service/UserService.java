@@ -117,7 +117,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        List<Review> reviews = reviewRepository.findByReviewedUserId(userId);
+        List<Review> reviews = reviewRepository.findByReviewedUser_Id(userId);
         if (reviews.isEmpty()) {
             user.setRating(0.0);
         } else {
