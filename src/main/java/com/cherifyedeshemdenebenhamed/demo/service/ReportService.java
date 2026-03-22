@@ -1,87 +1,96 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
+import com.cherifyedeshemdenebenhamed.demo.dto.ReportDTO;
+import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Report;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportStatus;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
 
     private final ReportRepository reportRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public ReportService(ReportRepository reportRepository) {
+    public ReportService(ReportRepository reportRepository, UserRepository userRepository) {
         this.reportRepository = reportRepository;
+        this.userRepository = userRepository;
     }
 
-    /**
-     * Crée un nouveau signalement.
-     * @param report Le signalement à créer.
-     * @return Le signalement enregistré.
-     */
-    public Report createReport(Report report) {
-        return reportRepository.save(report);  // Enregistre le signalement dans la base de données.
+    public ReportDTO createReport(Report report) {
+       
+        Report savedReport = reportRepository.save(report);
+        return mapToDTO(savedReport);
     }
 
-    /**
-     * Récupère tous les signalements faits par un utilisateur spécifique.
-     * @param user L'utilisateur qui a créé les signalements.
-     * @return Une liste de signalements créés par cet utilisateur.
-     */
-    public List<Report> getReportsByUser(User user) {
-        return reportRepository.findByReportedBy(user);  // Trouve tous les signalements associés à cet utilisateur.
+    public List<ReportDTO> getReportsByUser(User user) {
+        return reportRepository.findByReportedBy(user)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Récupère un signalement spécifique par son identifiant.
-     * @param id L'identifiant du signalement.
-     * @return Le signalement correspondant à l'identifiant.
-     */
-    public Optional<Report> getReportById(Long id) {
-        return reportRepository.findById(id);  // Trouve le signalement par ID.
+    public Optional<ReportDTO> getReportById(Long id) {
+        return reportRepository.findById(id).map(this::mapToDTO);
     }
 
-    /**
-     * Récupère les signalements en fonction de leur statut.
-     * @param status Le statut des signalements à récupérer.
-     * @return Une liste de signalements avec ce statut.
-     */
-    public List<Report> getReportsByStatus(ReportStatus status) {
-        return reportRepository.findByStatus(status);  // Récupère les signalements avec ce statut spécifique.
+    public List<ReportDTO> getReportsByStatus(ReportStatus status) {
+        return reportRepository.findByStatus(status)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Récupère les signalements en fonction de leur type.
-     * @param type Le type de contenu signalé (par exemple, LISTING, MESSAGE, etc.).
-     * @return Une liste de signalements du type spécifié.
-     */
-    public List<Report> getReportsByType(ReportType type) {
-        return reportRepository.findByType(type);  // Récupère les signalements de ce type spécifique.
+    public List<ReportDTO> getReportsByType(ReportType type) {
+        return reportRepository.findByType(type)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Récupère les signalements par type et statut.
-     * @param type Le type de contenu signalé.
-     * @param status Le statut des signalements à récupérer.
-     * @return Une liste de signalements correspondant à ce type et statut.
-     */
-    public List<Report> getReportsByTypeAndStatus(ReportType type, ReportStatus status) {
-        return reportRepository.findByTypeAndStatus(type, status);  // Récupère les signalements avec ce type et statut.
+    public List<ReportDTO> getReportsByTypeAndStatus(ReportType type, ReportStatus status) {
+        return reportRepository.findByTypeAndStatus(type, status)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Récupère les signalements liés à un élément spécifique (par exemple, un listing ou un message).
-     * @param targetId L'ID de l'élément signalé.
-     * @return Une liste de signalements concernant cet élément.
-     */
-    public List<Report> getReportsByTargetId(Long targetId) {
-        return reportRepository.findByTargetId(targetId);  // Récupère les signalements pour un élément spécifique.
+    public List<ReportDTO> getReportsByTargetId(Long targetId) {
+        return reportRepository.findByTargetId(targetId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public ReportDTO updateReportStatus(Long id, ReportStatus status) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Signalement introuvable"));
+
+        report.setStatus(status);
+        Report updatedReport = reportRepository.save(report);
+
+        return mapToDTO(updatedReport);
+    }
+
+    private ReportDTO mapToDTO(Report report) {
+        return new ReportDTO(
+                report.getId(),
+                report.getType(),
+                report.getTargetId(),
+                report.getReason(),
+                report.getStatus(),
+                report.getReportedBy() != null ? report.getReportedBy().getId() : null,
+                report.getCreatedAt()
+        );
     }
 }
