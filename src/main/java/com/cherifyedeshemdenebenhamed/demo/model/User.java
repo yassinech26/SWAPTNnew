@@ -72,6 +72,12 @@ public class User implements UserDetails {
     @Column(name = "google_id", length = 200)
     private String googleId;
 
+    @Column(name = "rating")
+    private Double rating = 0.0;
+
+    public Double getRating() { return rating; }
+    public void setRating(Double rating) { this.rating = rating; }
+
     public enum Status {
         ACTIVE,
         BANNED

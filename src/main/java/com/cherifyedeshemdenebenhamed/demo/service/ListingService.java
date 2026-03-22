@@ -29,4 +29,16 @@ public class ListingService {
     public void deleteListing(Long id) {
         listingRepository.deleteById(id);
     }
+
+    public List<Listing> searchByTitle(String title) {
+        return listingRepository.findByTitleContaining(title);
+    }
+
+    public List<Listing> filterByCategory(String category) {
+        return listingRepository.findByCategory(category);
+    }
+
+    public List<Listing> filterByPrice(Double min, Double max) {
+        return listingRepository.findByPriceBetween(min, max);
+    }
 }
