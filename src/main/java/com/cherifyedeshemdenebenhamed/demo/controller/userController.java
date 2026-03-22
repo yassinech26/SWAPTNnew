@@ -2,7 +2,7 @@ package com.cherifyedeshemdenebenhamed.demo.controller;
 
 import com.cherifyedeshemdenebenhamed.demo.dto.*;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
-import com.cherifyedeshemdenebenhamed.demo.service.userService;
+import com.cherifyedeshemdenebenhamed.demo.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,9 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping
 public class userController {
-    private final userService UserService;
-    public userController(userService UserService) {
-        this.UserService = UserService;
+    private final UserService userService;
+    public userController(UserService userService) {
+        this.userService = userService;
     }
 
     //pour que le mapping marche il faut que le client envoie un JSON avec les champs fullName, email et password
@@ -23,18 +23,18 @@ public class userController {
     @PostMapping("/auth/signup")
     @ResponseStatus(HttpStatus.CREATED)
     public RegisterResponse signup(@Valid @RequestBody RegisterRequest request) {
-        return UserService.register(request);
+        return userService.register(request);
     }
 
     @PostMapping("/auth/login")
     @ResponseStatus(HttpStatus.OK)
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return UserService.login(request);
+        return userService.login(request);
     }
 
     @GetMapping("/users/{id}")
     public User getUserById(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
-        User requestedUser = UserService.getUserById(id);
+        User requestedUser = userService.getUserById(id);
 
         if (!currentUser.getEmail().equals(requestedUser.getEmail())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
@@ -46,7 +46,7 @@ public class userController {
     @PutMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
     public UserResponse updateProfile(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
-        return UserService.updateProfile(id, request);
+        return userService.updateProfile(id, request);
     }
 
     /*  eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJjaGVyaWZ5YXNzaW5lZUBnbWFpbC5jb20iLCJpYXQiOjE3NzM3NjE5NTMsImV4cCI6MTc3Mzg0ODM1M30.4TakB6UNpmCNzwXWODgyhDotVF-0EHRGzLMweMm3y9K7U9udzd3RbUcyBayCaNGJ04-P1lb8_QYNgLkvD5yFRQ
@@ -64,13 +64,13 @@ public class userController {
     // ✅ Public endpoint (no auth)
     @GetMapping("/public/ping")
     public String publicPing() {
-        return UserService.publicMessage();
+        return userService.publicMessage();
     }
 
     // 🔒 Protected endpoint (needs auth)
     @GetMapping("/private/ping")
     public String privatePing() {
-        return UserService.privateMessage();
+        return userService.privateMessage();
     }*/
 
 }
