@@ -44,8 +44,7 @@ public class ConversationController {
     // POST method to create a conversation
     @PostMapping
     public ResponseEntity<ConversationResponse> create(@Valid @RequestBody CreateConversationRequest req) {
-        Long currentUserId = getCurrentAuthenticatedUser().getId(); // Temporary (replace with real auth later)
-
+        Long currentUserId = getCurrentAuthenticatedUser().getId();
         // Validate listingId is present
         if (req.getListingId() == null) {
             throw new BadRequestException("listingId is required");
