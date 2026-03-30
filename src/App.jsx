@@ -4,40 +4,11 @@ import { useState, useEffect, createContext, useContext, useRef } from "react";
 const AppContext = createContext();
 const useApp = () => useContext(AppContext);
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const ITEMS = [
-  { id: 1, title: "Levi's 501 Jeans", price: 28, size: "M", brand: "Levi's", condition: "Used", category: "Bottoms", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80", seller: "yassine_ch", likes: 14, location: "Bardo" },
-  { id: 2, title: "Nike Air Force 1 White", price: 55, size: "42", brand: "Nike", condition: "New", category: "Shoes", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80", seller: "mehdi_y", likes: 32, location: "Korba" },
-  { id: 3, title: "Zara Floral Dress", price: 18, size: "S", brand: "Zara", condition: "New", category: "Dresses", image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&q=80", seller: "mouldi_h", likes: 21, location: "Korba" },
-  { id: 4, title: "H&M Oversized Hoodie", price: 12, size: "L", brand: "H&M", condition: "Used", category: "Tops", image: "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&q=80", seller: "ahmed_k", likes: 8, location: "Tunis" },
-  { id: 5, title: "Adidas Track Jacket", price: 35, size: "M", brand: "Adidas", condition: "New", category: "Jackets", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80", seller: "ines_t", likes: 19, location: "Bizerte" },
-  { id: 6, title: "Mango Blazer Beige", price: 42, size: "S", brand: "Mango", condition: "New", category: "Jackets", image: "https://images.unsplash.com/photo-1594938298603-c8148c4b4571?w=400&q=80", seller: "yassine_ch", likes: 27, location: "Bardo" },
-  { id: 7, title: "Converse Chuck Taylor", price: 30, size: "38", brand: "Converse", condition: "Used", category: "Shoes", image: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400&q=80", seller: "youssef_r", likes: 15, location: "Nabeul" },
-  { id: 8, title: "Pull&Bear Mom Jeans", price: 16, size: "XS", brand: "Pull&Bear", condition: "Used", category: "Bottoms", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&q=80", seller: "mouldi_h", likes: 11, location: "Korba" },
-  { id: 9, title: "Tommy Hilfiger Polo", price: 22, size: "L", brand: "Tommy Hilfiger", condition: "New", category: "Tops", image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&q=80", seller: "mehdi_y", likes: 9, location: "Korba" },
-  { id: 10, title: "Vintage Leather Bag", price: 65, size: "One size", brand: "Vintage", condition: "Used", category: "Bags", image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80", seller: "mariem_s", likes: 44, location: "Tunis" },
-  { id: 11, title: "Bershka Mini Skirt", price: 9, size: "XS", brand: "Bershka", condition: "Used", category: "Bottoms", image: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&q=80", seller: "ines_t", likes: 17, location: "Tunis" },
-  { id: 12, title: "New Balance 574", price: 48, size: "40", brand: "New Balance", condition: "New", category: "Shoes", image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=400&q=80", seller: "ahmed_k", likes: 36, location: "Monastir" },
-];
-
+// ─── FILTER ENUMS ──────────────────────────────────────────────────────────────
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Jackets", "Shoes", "Bags", "Accessories"];
 const CONDITIONS = ["New", "Used"];
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "36", "38", "40", "42", "44", "One size"];
 const LOCATIONS = ["Ariana", "Bardo", "Ben Arous", "Bizerte", "Gabes", "Gafsa", "Jendouba", "Kairouan", "Kasserine", "Kebili", "Kelibia", "Kerkennah", "Korba", "Mahdia", "Manouba", "Medenine", "Monastir", "Nabeul", "Sfax", "Sidi Bouzid", "Siliana", "Sousse", "Tataouine", "Tozeur", "Tunis", "Zaghouan"];
-
-const USERS = {
-  rayen: { name: "Rayen", avatar: "https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/565809477_2330855203999506_8553157376258815417_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=reaYhHMc4bQQ7kNvwE3vlIG&_nc_oc=AdnUz9KY9lTV5VTNBUPC1jWuTfSS4CuN6K7w8cZ3PpacYTJh5Pw2G_rgQuC02cUYcfs&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=-DVT1clr4fuenoxOik7ExA&oh=00_AftFxnTkBH5x9Da4pr7tnU8H9wvm4oFMkx4Ey3QwIioZjg&oe=69A2C5B3", rating: 4.9, sales: 12, location: "Kelibia", bio: "Fashion seller", joined: "2024", followers: 45, following: 32, email: "rayen@example.com", password: "rayen123" },
-  yassine_ch: { name: "Yassine Cherif.", avatar: "https://scontent.ftun1-2.fna.fbcdn.net/v/t39.30808-1/514470781_2161843794240699_2700375031450333626_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=103&ccb=1-7&_nc_sid=e99d92&_nc_ohc=nI2chN1pzJYQ7kNvwEyhri5&_nc_oc=AdlYjCrQedy4aE33mbwiXfCuNoKsKzt9mFKpazaLE0louUeaV4DSOUpLQl9kvHPlgmA&_nc_zt=24&_nc_ht=scontent.ftun1-2.fna&_nc_gid=Sv9X9eRzBb9wkfZ3pa4pmQ&_nc_ss=8&oh=00_AfyZk409Ni8aB3gP0W-z1mSHJiAI779pByAJ0wXPXk94LA&oe=69ACB87B", rating: 4.9, sales: 47, location: "Bardo", bio: "Fashion lover. Selling to make space in my wardrobe", joined: "2022", followers: 120, following: 88, email: "yassine@example.com", password: "yassine123" },
-  mehdi_y: { name: "Mehdi yedees.", avatar: "https://scontent.ftun1-2.fna.fbcdn.net/v/t39.30808-6/490654903_1379431153244589_1328918101645009794_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=101&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=-sZ4mK3mrksQ7kNvwFcqutR&_nc_oc=AdnlJMAbCNCH52EvrLxeBr16RM_VwPa8BmfrJ7VRGT0PNTw1E1wVuOtzxTo92FbcbK0&_nc_zt=23&_nc_ht=scontent.ftun1-2.fna&_nc_gid=BmAkOx5SCgyBy3PVWWMVcw&_nc_ss=8&oh=00_AfyRZMVv657cQYYMdtmqVhIVLVtYR3C89KLNylsO-ZjdnQ&oe=69ACC322", rating: 4.7, sales: 23, location: "Korba", bio: "Sneakerhead & streetwear enthusiast", joined: "2023", followers: 65, following: 42, email: "mehdi@example.com", password: "mehdi123" },
-  mouldi_h: { name: "Mouldi hemdene.", avatar: "https://i.pravatar.cc/150?img=13", rating: 5.0, sales: 88, location: "Korba", bio: "Sustainable fashion advocate ♻️", joined: "2021", followers: 230, following: 145, email: "mouldi@example.com", password: "mouldi123" },
-};
-
-const MESSAGES = [
-  { id: 1, user: "yassine_ch", recipient: "rayen", avatar: "https://scontent.ftun1-2.fna.fbcdn.net/v/t39.30808-1/514470781_2161843794240699_2700375031450333626_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=103&ccb=1-7&_nc_sid=e99d92&_nc_ohc=nI2chN1pzJYQ7kNvwEyhri5&_nc_oc=AdlYjCrQedy4aE33mbwiXfCuNoKsKzt9mFKpazaLE0louUeaV4DSOUpLQl9kvHPlgmA&_nc_zt=24&_nc_ht=scontent.ftun1-2.fna&_nc_gid=Sv9X9eRzBb9wkfZ3pa4pmQ&_nc_ss=8&oh=00_AfyZk409Ni8aB3gP0W-z1mSHJiAI779pByAJ0wXPXk94LA&oe=69ACB87B", lastMessage: "Is this still available?", time: "2m", unread: true, item: "Mango Blazer Beige" },
-  { id: 2, user: "mehdi_y", recipient: "rayen", avatar: "https://scontent.ftun1-2.fna.fbcdn.net/v/t39.30808-6/490654903_1379431153244589_1328918101645009794_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=101&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=-sZ4mK3mrksQ7kNvwFcqutR&_nc_oc=AdnlJMAbCNCH52EvrLxeBr16RM_VwPa8BmfrJ7VRGT0PNTw1E1wVuOtzxTo92FbcbK0&_nc_zt=23&_nc_ht=scontent.ftun1-2.fna&_nc_gid=BmAkOx5SCgyBy3PVWWMVcw&_nc_ss=8&oh=00_AfyRZMVv657cQYYMdtmqVhIVLVtYR3C89KLNylsO-ZjdnQ&oe=69ACC322", lastMessage: "Can you do 45 TND?", time: "1h", unread: true, item: "Nike Air Force 1" },
-  { id: 3, user: "mouldi_h", recipient: "yassine_ch", avatar: "https://i.pravatar.cc/150?img=13", lastMessage: "Thank you! 🌸", time: "3h", unread: false, item: "Zara Floral Dress" },
-  { id: 4, user: "rayen", recipient: "mehdi_y", avatar: "https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/565809477_2330855203999506_8553157376258815417_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=reaYhHMc4bQQ7kNvwE3vlIG&_nc_oc=AdnUz9KY9lTV5VTNBUPC1jWuTfSS4CuN6K7w8cZ3PpacYTJh5Pw2G_rgQuC02cUYcfs&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=-DVT1clr4fuenoxOik7ExA&oh=00_AftFxnTkBH5x9Da4pr7tnU8H9wvm4oFMkx4Ey3QwIioZjg&oe=69A2C5B3", lastMessage: "What's the best price?", time: "30m", unread: false, item: "Nike Air Force 1" },
-];
 
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
 const TRANSLATIONS = {
@@ -256,9 +227,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
   const t = TRANSLATIONS[language];
 
   // Calculate user messages count
-  const userMessageCount = user ? MESSAGES.filter(msg => 
-    msg.user === (user?.username || user?.email) || msg.recipient === (user?.username || user?.email)
-  ).length : 0;
+  const userMessageCount = 0;
 
   const navStyle = {
     position: "sticky", top: 0, zIndex: 1000,
@@ -512,28 +481,9 @@ function HomePage({ setPage, setSelectedItem, language }) {
               ))}
             </div>
           </div>
-          {/* Hero Cards */}
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 440 }}>
-            {ITEMS.slice(0, 4).map((item, i) => (
-              <div key={item.id} onClick={() => { setSelectedItem(item); setPage("item"); }}
-                style={{
-                  background: "rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(8px)",
-                  borderRadius: 16, overflow: "hidden",
-                  cursor: "pointer", border: "1px solid rgba(255,255,255,0.15)",
-                  transform: `translateY(${i % 2 === 0 ? 0 : 16}px)`,
-                  transition: "transform 0.25s"
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = `translateY(${i % 2 === 0 ? -4 : 12}px)`}
-                onMouseLeave={e => e.currentTarget.style.transform = `translateY(${i % 2 === 0 ? 0 : 16}px)`}
-              >
-                <img src={item.image} style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }} alt="" />
-                <div style={{ padding: 10, color: "white" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{item.title}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>{item.price} TND</div>
-                </div>
-              </div>
-            ))}
+          {/* Hero Cards - Coming from Backend */}
+          <div style={{ flex: 1, background: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", borderRadius: 16, padding: 20, display: "flex", alignItems: "center", justifyContent: "center", color: "white", textAlign: "center" }}>
+            <p>Featured items will appear here</p>
           </div>
         </div>
       </div>
@@ -566,16 +516,14 @@ function HomePage({ setPage, setSelectedItem, language }) {
         </div>
       </div>
 
-      {/* Featured Items */}
+      {/* Featured Items - Coming from Backend */}
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "60px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900 }}>{t.newArrivals}</h2>
           <button className="btn-secondary" onClick={() => setPage("browse")}>{t.seeAll}</button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-          {ITEMS.map(item => (
-            <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />
-          ))}
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <p>Items will be loaded from your backend API</p>
         </div>
       </div>
 
@@ -616,16 +564,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
     setActiveCategory(selectedCategory || "All");
   }, [selectedCategory]);
 
-  const filtered = ITEMS.filter(item => {
-    const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.brand.toLowerCase().includes(search.toLowerCase());
-    const matchCat = activeCategory === "All" || item.category === activeCategory;
-    const matchMin = !filters.minPrice || item.price >= Number(filters.minPrice);
-    const matchMax = !filters.maxPrice || item.price <= Number(filters.maxPrice);
-    const matchCond = !filters.condition || item.condition === filters.condition;
-    const matchSize = !filters.size || item.size === filters.size;
-    const matchLoc = !filters.location || item.location === filters.location;
-    return matchSearch && matchCat && matchMin && matchMax && matchCond && matchSize && matchLoc;
-  });
+  const filtered = [];
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -694,21 +633,11 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-        {filtered.sort((a, b) => {
-          if (sortBy === "price-asc") return a.price - b.price;
-          if (sortBy === "price-desc") return b.price - a.price;
-          if (sortBy === "popular") return b.likes - a.likes;
-          return 0; // newest (default order)
-        }).map(item => (
-          <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />
-        ))}
-        {filtered.length === 0 && (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>😔</div>
-            <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>No items found</div>
-            <div>Try adjusting your filters</div>
-          </div>
-        )}
+        <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Items will load from backend</div>
+          <div>Connect to your API to display listings</div>
+        </div>
       </div>
     </div>
   );
@@ -721,8 +650,8 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
 
-  const seller = USERS[item.seller] || { name: item.seller, avatar: "https://i.pravatar.cc/150?img=1", rating: 4.5, sales: 10 };
-  const imgs = [item.image, ...ITEMS.filter(i => i.id !== item.id).slice(0, 2).map(i => i.image)];
+  const seller = { name: item?.seller || "Seller", avatar: "https://i.pravatar.cc/150?img=1", rating: 4.5, sales: 10, location: "Tunisia" };
+  const imgs = [item?.image].filter(Boolean);
 
   const handleCart = () => {
     if (!cart.find(i => i.id === item.id)) setCart(c => [...c, item]);
@@ -803,11 +732,11 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
         </div>
       </div>
 
-      {/* Similar Items */}
+      {/* Similar Items - Coming from Backend */}
       <div style={{ marginTop: 64 }}>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900, marginBottom: 24 }}>You May Also Like</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-          {ITEMS.filter(i => i.id !== item.id).slice(0, 4).map(i => <ItemCard key={i.id} item={i} onClick={() => {}} />)}
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--gray)" }}>
+          <p>Similar items will load from backend</p>
         </div>
       </div>
     </div>
@@ -1182,20 +1111,7 @@ function MessagesPage({ language }) {
     4: [{ from: "me", text: "What's the best price?", time: "30m ago" }, { from: "them", text: "I can do 50 TND", time: "25m ago" }],
   });
 
-  const userMessages = MESSAGES.filter(msg => 
-    msg.user === (user?.username || user?.email) || msg.recipient === (user?.username || user?.email)
-  ).map(msg => {
-    // Determine who the "other person" is in this conversation
-    const currentUser = user?.username || user?.email;
-    const otherUser = msg.user === currentUser ? msg.recipient : msg.user;
-    const otherUserAvatar = USERS[otherUser]?.avatar || msg.avatar;
-    return { ...msg, otherUser, avatar: otherUserAvatar };
-  }).filter((msg, index, self) => {
-    // Deduplicate conversations (only keep first message for each conversation pair)
-    const pair = [msg.user, msg.recipient].sort().join("-");
-    const firstIndex = self.findIndex(m => [m.user, m.recipient].sort().join("-") === pair);
-    return firstIndex === index;
-  });
+  const userMessages = [];
 
   useEffect(() => {
     if (userMessages.length > 0 && !activeChat) {
@@ -1292,8 +1208,8 @@ function ProfilePage({ setPage, setUser, language }) {
   const t = TRANSLATIONS[language];
   const { user } = useApp();
   const [tab, setTab] = useState("listings");
-  const userItems = ITEMS.slice(0, 4);
-  const u = user || { name: "Rayen", avatar: "https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/565809477_2330855203999506_8553157376258815417_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=1d70fc&_nc_ohc=reaYhHMc4bQQ7kNvwE3vlIG&_nc_oc=AdnUz9KY9lTV5VTNBUPC1jWuTfSS4CuN6K7w8cZ3PpacYTJh5Pw2G_rgQuC02cUYcfs&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=-DVT1clr4fuenoxOik7ExA&oh=00_AftFxnTkBH5x9Da4pr7tnU8H9wvm4oFMkx4Ey3QwIioZjg&oe=69A2C5B3", rating: 4.9, sales: 12, location: "Kelibia", bio: "fashion seller", followers: 45, following: 32 };
+  const userItems = [];
+  const u = user || { name: "User", avatar: "https://i.pravatar.cc/150?img=1", rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -1339,23 +1255,13 @@ function ProfilePage({ setPage, setUser, language }) {
       </div>
 
       {tab === "listings" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20, animation: "fadeIn 0.3s ease" }}>
-          {userItems.map(item => <ItemCard key={item.id} item={item} onClick={() => {}} />)}
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <p>Your listings will appear here once you post them</p>
         </div>
       )}
       {tab === "sold" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
-          {ITEMS.slice(4, 7).map(item => (
-            <div key={item.id} className="card" style={{ display: "flex", gap: 16, padding: 16, alignItems: "center" }}>
-              <img src={item.image} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="" />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{item.title}</div>
-                <div style={{ color: "var(--gray)", fontSize: 14 }}>Sold on Jan {10 + item.id}, 2025</div>
-              </div>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 900, color: "var(--teal-dark)" }}>{item.price} TND</span>
-              <span className="badge">✅ Sold</span>
-            </div>
-          ))}
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <p>Sold items will appear here</p>
         </div>
       )}
       {tab === "reviews" && (
@@ -1376,18 +1282,8 @@ function ProfilePage({ setPage, setUser, language }) {
         </div>
       )}
       {tab === "orders" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
-          {ITEMS.slice(1, 4).map((item, i) => (
-            <div key={item.id} className="card" style={{ display: "flex", gap: 16, padding: 16, alignItems: "center" }}>
-              <img src={item.image} style={{ width: 64, height: 64, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="" />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{item.title}</div>
-                <div style={{ color: "var(--gray)", fontSize: 14 }}>From: {item.seller}</div>
-              </div>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 900, color: "var(--teal-dark)" }}>{item.price} TND</span>
-              <span className={`badge ${i === 0 ? "" : i === 1 ? "" : "badge-coral"}`}>{["🚚 Shipped", "⏳ Processing", "✅ Delivered"][i]}</span>
-            </div>
-          ))}
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <p>Your orders will appear here</p>
         </div>
       )}
     </div>
@@ -1396,8 +1292,8 @@ function ProfilePage({ setPage, setUser, language }) {
 
 function SellerPage({ setPage, sellerUsername, language }) {
   const t = TRANSLATIONS[language];
-  const seller = USERS[sellerUsername] || USERS["mouldi_h"];
-  const items = ITEMS.filter(i => i.seller === sellerUsername);
+  const seller = { name: sellerUsername || "Seller", avatar: "https://i.pravatar.cc/150?img=1", bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
+  const items = [];
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -1420,9 +1316,9 @@ function SellerPage({ setPage, sellerUsername, language }) {
           </div>
         </div>
       </div>
-      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 900, marginBottom: 20 }}>{seller.name.split(" ")[0]}'s Listings ({items.length})</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-        {items.map(item => <ItemCard key={item.id} item={item} onClick={() => setPage("item")} />)}
+      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 900, marginBottom: 20 }}>{seller.name.split(" ")[0]}'s Listings (0)</h2>
+      <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+        <p>Seller listings will load from backend</p>
       </div>
     </div>
   );
@@ -1439,37 +1335,17 @@ function LoginPage({ setPage, language }) {
     setError("");
     
     if (isLogin) {
-      // Find user by email and validate password
-      const foundUser = Object.entries(USERS).find(([key, user]) => user.email === form.email);
-      
-      if (!foundUser) {
-        setError("Email not found");
+      if (!form.email || !form.password) {
+        setError("Please fill all fields");
         return;
       }
-      
-      const [username, userData] = foundUser;
-      if (userData.password !== form.password) {
-        setError("Invalid password");
-        return;
-      }
-      
-      setUser({ ...userData, username });
+      setUser({ name: form.email.split("@")[0], email: form.email, avatar: "https://i.pravatar.cc/150?img=50", rating: 0, sales: 0, location: "Tunisia", bio: "User", joined: new Date().getFullYear().toString(), followers: 0, following: 0 });
       setPage("home");
     } else {
-      // For signup, check if email already exists
-      const emailExists = Object.values(USERS).some(user => user.email === form.email);
-      
-      if (emailExists) {
-        setError("Email already registered");
-        return;
-      }
-      
       if (!form.name || !form.email || !form.password) {
         setError("Please fill all fields");
         return;
       }
-      
-      // Create new user (in real app, would save to database)
       setUser({ name: form.name, email: form.email, avatar: "https://i.pravatar.cc/150?img=50", rating: 0, sales: 0, location: "Tunisia", bio: "New seller", joined: new Date().getFullYear().toString(), followers: 0, following: 0 });
       setPage("home");
     }
@@ -1607,7 +1483,7 @@ function Footer({ setPage, language }) {
 
 export default function App() {
   const [page, setPage] = useState("home");
-  const [selectedItem, setSelectedItem] = useState(ITEMS[0]);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState([]);
