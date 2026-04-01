@@ -87,7 +87,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
       }
     } catch (err) {
       console.error("Failed to send message:", err);
-      alert("Failed to send message");
+      alert(err.message || "Failed to send message");
     } finally {
       setSending(false);
     }

@@ -818,10 +818,6 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
               setPage("login");
               return;
             }
-            if (user.id === seller.id) {
-              alert("❌ You cannot message yourself");
-              return;
-            }
             setMessageSending(true);
             try {
               const conversation = await api.createConversation(item.id, seller.id);
