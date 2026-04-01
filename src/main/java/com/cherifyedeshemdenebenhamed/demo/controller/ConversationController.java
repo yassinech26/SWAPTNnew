@@ -93,15 +93,7 @@ public class ConversationController {
             throw new ForbiddenException("You are not a participant in this conversation");
         }
 
-        // Return the conversation as a DTO
-        ConversationResponse response = new ConversationResponse(
-                conversation.getId(),
-                conversation.getListingId(),
-                conversation.getUser1().getId(),
-                conversation.getUser2().getId(),
-                conversation.getCreatedAt()
-        );
-
-        return ResponseEntity.ok(response);
+        // Return the conversation as a DTO using the service method to handle DTO conversion
+        return ResponseEntity.ok(conversationService.getConversationResponse(conversation, currentUserId));
     }
 }

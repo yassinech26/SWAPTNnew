@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -41,8 +42,28 @@ public class Listing {
     @NotBlank(message = "Category is required")
     private String category;
 
+    @Size(max = 100)
+    @Column(length = 100)
+    private String brand;
+
+    @Size(max = 20)
+    @Column(length = 20)
+    private String size;
+
+    @Size(max = 20)
+    @Column(length = 20)
+    private String condition;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String location;
+
+    @Size(max = 500)
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
-    private ListingStatus status;
+    private ListingStatus status = ListingStatus.ACTIVE;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -102,6 +123,46 @@ public class Listing {
 
     public void setStatus(ListingStatus status) {
         this.status = status;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getSize() {
+        return size;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public String getCondition() {
+        return condition;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

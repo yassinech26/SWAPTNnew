@@ -1,4 +1,33 @@
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+import * as api from "./api";
+import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
+
+// ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error("App Error:", error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <div style={{padding: "40px", textAlign: "center", color: "red"}}>
+        <h1>⚠️ App Error</h1>
+        <p>{this.state.error?.message}</p>
+        <button onClick={() => window.location.reload()} style={{padding: "10px 20px", marginTop: "20px"}}>Reload</button>
+      </div>;
+    }
+    return this.props.children;
+  }
+}
 
 // ─── CONTEXT ─────────────────────────────────────────────────────────────────
 const AppContext = createContext();
@@ -207,6 +236,25 @@ const globalStyle = `
     background: white;
   }
   .input-field:focus { border-color: var(--teal); }
+
+  .messages-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--teal) var(--light-gray);
+  }
+  .messages-container::-webkit-scrollbar {
+    width: 10px;
+  }
+  .messages-container::-webkit-scrollbar-track {
+    background: var(--light-gray);
+    border-radius: 5px;
+  }
+  .messages-container::-webkit-scrollbar-thumb {
+    background: var(--teal);
+    border-radius: 5px;
+  }
+  .messages-container::-webkit-scrollbar-thumb:hover {
+    background: var(--teal-dark);
+  }
 
   .page-header {
     font-family: var(--font-display);
@@ -468,7 +516,7 @@ function HomePage({ setPage, setSelectedItem, language }) {
               <button className="btn-primary" style={{ background: "white", color: "var(--teal-dark)", padding: "14px 32px", fontSize: 16 }} onClick={() => setPage("browse")}>
                 🛍️ {t.startShopping}
               </button>
-              <button className="btn-secondary" style={{ borderColor: "rgba(255,255,255,0.5)", color: "white", padding: "14px 32px", fontSize: 16 }} onClick={() => setPage("sell")}>
+              <button className="btn-secondary" style={{ borderColor: "rgba(255,255,255,0.5)", color: "black", padding: "14px 32px", fontSize: 16 }} onClick={() => setPage("sell")}>
                 ➕ {t.listItem}
               </button>
             </div>
@@ -552,7 +600,7 @@ function HomePage({ setPage, setSelectedItem, language }) {
   );
 }
 
-function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
+function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false }) {
   const t = TRANSLATIONS[language];
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(selectedCategory || "All");
@@ -564,7 +612,29 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
     setActiveCategory(selectedCategory || "All");
   }, [selectedCategory]);
 
-  const filtered = [];
+  // Filter and sort listings
+  let filtered = listings.filter(item => {
+    const matchesSearch = search === "" || 
+      item.title?.toLowerCase().includes(search.toLowerCase()) || 
+      item.brand?.toLowerCase().includes(search.toLowerCase());
+    
+    const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+    
+    const price = parseFloat(item.price) || 0;
+    const matchesPrice = (!filters.minPrice || price >= parseFloat(filters.minPrice)) &&
+                        (!filters.maxPrice || price <= parseFloat(filters.maxPrice));
+    
+    const matchesCondition = !filters.condition || item.condition === filters.condition;
+    const matchesSize = !filters.size || item.size === filters.size;
+    const matchesLocation = !filters.location || item.location === filters.location;
+    
+    return matchesSearch && matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation;
+  });
+
+  // Sort
+  if (sortBy === "price-asc") filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+  else if (sortBy === "price-desc") filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+  else if (sortBy === "newest") filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -601,27 +671,27 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
         <div style={{ background: "white", borderRadius: "var(--radius)", padding: 24, marginBottom: 24, boxShadow: "var(--shadow)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, animation: "fadeIn 0.3s ease" }}>
           {[["Min Price (TND)", "minPrice"], ["Max Price (TND)", "maxPrice"]].map(([label, key]) => (
             <div key={key}>
-              <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
-              <input className="input-field" type="number" placeholder="0" value={filters[key]} onChange={e => setFilters(f => ({ ...f, [key]: e.target.value }))} />
+              <label htmlFor={`filter-${key}`} style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
+              <input id={`filter-${key}`} className="input-field" type="number" placeholder="0" value={filters[key]} onChange={e => setFilters(f => ({ ...f, [key]: e.target.value }))} />
             </div>
           ))}
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Condition</label>
-            <select className="input-field" value={filters.condition} onChange={e => setFilters(f => ({ ...f, condition: e.target.value }))}>
+            <label htmlFor="filter-condition" style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Condition</label>
+            <select id="filter-condition" className="input-field" value={filters.condition} onChange={e => setFilters(f => ({ ...f, condition: e.target.value }))}>
               <option value="">Any condition</option>
               {CONDITIONS.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Size</label>
-            <select className="input-field" value={filters.size} onChange={e => setFilters(f => ({ ...f, size: e.target.value }))}>
+            <label htmlFor="filter-size" style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Size</label>
+            <select id="filter-size" className="input-field" value={filters.size} onChange={e => setFilters(f => ({ ...f, size: e.target.value }))}>
               <option value="">Any size</option>
               {SIZES.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Location</label>
-            <select className="input-field" value={filters.location} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}>
+            <label htmlFor="filter-location" style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Location</label>
+            <select id="filter-location" className="input-field" value={filters.location} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}>
               <option value="">All locations</option>
               {LOCATIONS.map(g => <option key={g}>{g}</option>)}
             </select>
@@ -632,25 +702,50 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language }) {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-        <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
-          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Items will load from backend</div>
-          <div>Connect to your API to display listings</div>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <div style={{ fontSize: 48, marginBottom: 16, animation: "pulse 1.5s infinite" }}>⏳</div>
+          <div>Loading items...</div>
         </div>
-      </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🛍️</div>
+          <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>No items found</div>
+          <div>Try adjusting your filters or search terms</div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
+          {filtered.map(item => <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />)}
+        </div>
+      )}
     </div>
   );
 }
 
 function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const t = TRANSLATIONS[language];
-  const { cart, setCart, wishlist, setWishlist } = useApp();
+  const { cart, setCart, wishlist, setWishlist, user } = useApp();
   const [liked, setLiked] = useState(wishlist.some(i => i.id === item.id));
   const [addedToCart, setAddedToCart] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [messageSending, setMessageSending] = useState(false);
 
-  const seller = { name: item?.seller || "Seller", avatar: "https://i.pravatar.cc/150?img=1", rating: 4.5, sales: 10, location: "Tunisia" };
+  // ✅ FIXED: Get seller info from owner object - with better fallbacks
+  const sellerObj = item?.owner || { fullName: item?.seller || "Seller" };
+  const seller = { 
+    name: sellerObj?.fullName || sellerObj?.name || sellerObj?.seller || "Seller", 
+    id: sellerObj?.id,
+    avatar: sellerObj?.imageUrl || "https://i.pravatar.cc/150?img=1", 
+    rating: 4.5, 
+    sales: 10, 
+    location: sellerObj?.city || sellerObj?.location || "Tunisia" 
+  };
+  
+  // Debug log to see what we're receiving
+  useEffect(() => {
+    console.log("Item data:", { item, sellerObj, seller });
+  }, [item]);
+  
   const imgs = [item?.image].filter(Boolean);
 
   const handleCart = () => {
@@ -716,8 +811,32 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
           }}>
             {liked ? "❤️ Saved to Wishlist" : "🤍 Save to Wishlist"}
           </button>
-          <button className="btn-secondary" style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8 }} onClick={() => setPage("messages")}>
-            💬 Message Seller
+          {/* ✅ FIXED: Message button now creates conversation */}
+          <button className="btn-secondary" style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, opacity: messageSending ? 0.6 : 1, cursor: messageSending ? "not-allowed" : "pointer" }} onClick={async () => {
+            if (!user) {
+              alert("🔒 Please log in to message the seller");
+              setPage("login");
+              return;
+            }
+            if (user.id === seller.id) {
+              alert("❌ You cannot message yourself");
+              return;
+            }
+            setMessageSending(true);
+            try {
+              const conversation = await api.createConversation(item.id, seller.id);
+              if (conversation?.id) {
+                alert("✅ Conversation started! Redirecting to Messages...");
+                setPage("messages");
+              }
+            } catch (err) {
+              console.error("Conversation error:", err);
+              alert("⚠️ " + (err.message || "Failed to start conversation"));
+            } finally {
+              setMessageSending(false);
+            }
+          }} disabled={messageSending}>
+            {messageSending ? "⏳ Starting chat..." : "💬 Message Seller"}
           </button>
 
           {/* Seller */}
@@ -744,18 +863,48 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
 }
 
 function SellPage({ setPage, language }) {
+  const { user, setListings } = useApp();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ title: "", category: "", brand: "", size: "", condition: "", price: "", description: "", images: [] });
-  const fileInputRef = useRef(null);
+  const [form, setForm] = useState({ title: "", category: "", brand: "", size: "", condition: "", price: "", description: "", imageUrl: "", location: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const t = TRANSLATIONS[language];
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handlePhotoSelect = (e) => {
-    const files = e.target.files;
-    if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      update("images", newImages);
+  const handlePublish = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      // For now, store the first image URL if available, or use a placeholder
+      const listingData = {
+        title: form.title,
+        description: form.description,
+        price: parseFloat(form.price),
+        category: form.category,
+        brand: form.brand || "N/A",
+        size: form.size || "N/A",
+        condition: form.condition || "New",
+        location: form.location || "Tunis",
+        imageUrl: form.imageUrl || "https://via.placeholder.com/500x500?text=" + encodeURIComponent(form.title || "Item"),
+        status: "ACTIVE"
+      };
+
+      const result = await api.createListing(listingData);
+      
+      if (result?.id) {
+        // Refresh listings
+        const allListings = await api.fetchListings();
+        setListings(Array.isArray(allListings) ? allListings : []);
+        
+        alert("✅ Listing published successfully!");
+        setPage("profile");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to publish listing. Please try again.");
+      console.error("Publish error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -764,7 +913,9 @@ function SellPage({ setPage, language }) {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
       <h1 className="page-header">{t.listItem}</h1>
-      <p style={{ color: "var(--gray)", marginBottom: 32 }}>{t.turnUnused}</p>
+      <p style={{ color: "var(--grey)", marginBottom: 32 }}>{t.turnUnused}</p>
+
+      {error && <div style={{ background: "#7232c5", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500 }}>{error}</div>}
 
       {/* Steps */}
       <div style={{ display: "flex", gap: 0, marginBottom: 40 }}>
@@ -786,54 +937,23 @@ function SellPage({ setPage, language }) {
         {step === 1 && (
           <div style={{ animation: "slideIn 0.3s ease" }}>
             <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Add Photos</h2>
-            <div style={{
-              border: "2px dashed var(--border)", borderRadius: "var(--radius)",
-              padding: "60px 24px", textAlign: "center", cursor: "pointer",
-              transition: "border-color 0.2s", marginBottom: 16,
-              background: "var(--light-gray)"
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📸</div>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.dragDropPhotos}</div>
-              <div style={{ color: "var(--gray)", fontSize: 14, marginBottom: 16 }}>{t.clickBrowse}</div>
+            <div style={{ border: "2px dashed var(--border)", borderRadius: "var(--radius)", padding: "24px", textAlign: "center", background: "var(--light-gray)" }}>
+              <label htmlFor="sell-image-url" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 8 }}>📸 Image URL</label>
               <input 
-                ref={fileInputRef} 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                onChange={handlePhotoSelect} 
-                style={{ display: "none" }} 
+                id="sell-image-url"
+                className="input-field"
+                type="url"
+                placeholder="Paste image URL (e.g., https://images.unsplash.com/...)"
+                value={form.imageUrl}
+                onChange={e => update("imageUrl", e.target.value)}
+                style={{ marginBottom: 8 }}
               />
-              <button 
-                className="btn-secondary" 
-                style={{ padding: "10px 24px" }}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {t.choosePhotos}
-              </button>
-            </div>
-            {form.images.length > 0 && (
-              <div style={{ marginTop: 24 }}>
-                <h3 style={{ fontWeight: 600, marginBottom: 12 }}>Selected Photos ({form.images.length})</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 12 }}>
-                  {form.images.map((img, idx) => (
-                    <div key={idx} style={{ position: "relative", borderRadius: "var(--radius-sm)", overflow: "hidden" }}>
-                      <img src={img} style={{ width: "100%", height: 100, objectFit: "cover" }} alt={`Selected ${idx + 1}`} />
-                      <button 
-                        onClick={() => update("images", form.images.filter((_, i) => i !== idx))}
-                        style={{
-                          position: "absolute", top: 4, right: 4,
-                          background: "rgba(0,0,0,0.6)", color: "white",
-                          border: "none", borderRadius: "50%", width: 24, height: 24,
-                          cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center"
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+              {form.imageUrl && (
+                <div style={{ marginTop: 16 }}>
+                  <img src={form.imageUrl} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="Preview" onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Invalid+URL"; }} />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             <p style={{ color: "var(--gray)", fontSize: 13, marginTop: 16 }}>💡 Tip: Good lighting and multiple angles get 3x more views!</p>
           </div>
         )}
@@ -841,24 +961,24 @@ function SellPage({ setPage, language }) {
           <div style={{ animation: "slideIn 0.3s ease" }}>
             <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Item Details</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {[["Title", "title", "e.g. Zara Blue Linen Blouse"], ["Brand", "brand", "e.g. Zara, H&M, Nike..."]].map(([label, key, ph]) => (
+              {[["Title", "title", "e.g. Zara Blue Linen Blouse"], ["Brand", "brand", "e.g. Zara, H&M, Nike..."], ["Location", "location", "e.g. Tunis"]].map(([label, key, ph]) => (
                 <div key={key}>
-                  <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
-                  <input className="input-field" placeholder={ph} value={form[key]} onChange={e => update(key, e.target.value)} />
+                  <label htmlFor={`sell-${key}`} style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
+                  <input id={`sell-${key}`} className="input-field" placeholder={ph} value={form[key]} onChange={e => update(key, e.target.value)} />
                 </div>
               ))}
               {[["Category", "category", CATEGORIES.slice(1)], ["Condition", "condition", CONDITIONS], ["Size", "size", SIZES]].map(([label, key, opts]) => (
                 <div key={key}>
-                  <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
-                  <select className="input-field" value={form[key]} onChange={e => update(key, e.target.value)}>
+                  <label htmlFor={`sell-${key}`} style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
+                  <select id={`sell-${key}`} className="input-field" value={form[key]} onChange={e => update(key, e.target.value)}>
                     <option value="">Select {label.toLowerCase()}</option>
                     {opts.map(o => <option key={o}>{o}</option>)}
                   </select>
                 </div>
               ))}
               <div>
-                <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Description</label>
-                <textarea className="input-field" rows={4} placeholder="Describe any details, measurements, or flaws…" value={form.description} onChange={e => update("description", e.target.value)} style={{ resize: "vertical" }} />
+                <label htmlFor="sell-description" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Description</label>
+                <textarea id="sell-description" className="input-field" rows={4} placeholder="Describe any details, measurements, or flaws…" value={form.description} onChange={e => update("description", e.target.value)} style={{ resize: "vertical" }} />
               </div>
             </div>
           </div>
@@ -892,15 +1012,15 @@ function SellPage({ setPage, language }) {
                 </div>
               ))}
             </div>
-            <button className="btn-primary" style={{ width: "100%", padding: 16, fontSize: 16, justifyContent: "center" }} onClick={() => setPage("profile")}>
-              🚀 Publish Listing
+            <button className="btn-primary" style={{ width: "100%", padding: 16, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handlePublish} disabled={loading}>
+              {loading ? "Publishing..." : "🚀 Publish Listing"}
             </button>
           </div>
         )}
 
         <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
-          {step > 1 && <button className="btn-secondary" style={{ flex: 1, padding: 14 }} onClick={() => setStep(s => s - 1)}>← Back</button>}
-          {step < 4 && <button className="btn-primary" style={{ flex: 1, padding: 14, justifyContent: "center" }} onClick={() => setStep(s => s + 1)}>Continue →</button>}
+          {step > 1 && <button className="btn-secondary" style={{ flex: 1, padding: 14 }} onClick={() => setStep(s => s - 1)} disabled={loading}>← Back</button>}
+          {step < 4 && <button className="btn-primary" style={{ flex: 1, padding: 14, justifyContent: "center" }} onClick={() => setStep(s => s + 1)} disabled={loading}>Continue →</button>}
         </div>
       </div>
     </div>
@@ -915,6 +1035,7 @@ function CartPage({ setPage, language }) {
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
       <h1 className="page-header">My Cart</h1>
       {cart.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
@@ -1005,8 +1126,8 @@ function CheckoutPage({ setPage, language }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {[["Full Name", "name", "text"], ["Phone Number", "phone", "tel"], ["Address", "address", "text"], ["City", "city", "text"]].map(([l, k, t]) => (
                   <div key={k}>
-                    <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{l}</label>
-                    <input className="input-field" type={t} placeholder={l} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
+                    <label htmlFor={`checkout-${k}`} style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{l}</label>
+                    <input id={`checkout-${k}`} className="input-field" type={t} placeholder={l} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
                   </div>
                 ))}
               </div>
@@ -1027,17 +1148,17 @@ function CheckoutPage({ setPage, language }) {
               {form.method === "card" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Card Number</label>
-                    <input className="input-field" placeholder="1234 5678 9012 3456" value={form.cardNum} onChange={e => setForm(f => ({ ...f, cardNum: e.target.value }))} />
+                    <label htmlFor="card-number" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Card Number</label>
+                    <input id="card-number" className="input-field" placeholder="1234 5678 9012 3456" value={form.cardNum} onChange={e => setForm(f => ({ ...f, cardNum: e.target.value }))} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <div>
-                      <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Expiry</label>
-                      <input className="input-field" placeholder="MM/YY" value={form.expiry} onChange={e => setForm(f => ({ ...f, expiry: e.target.value }))} />
+                      <label htmlFor="card-expiry" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Expiry</label>
+                      <input id="card-expiry" className="input-field" placeholder="MM/YY" value={form.expiry} onChange={e => setForm(f => ({ ...f, expiry: e.target.value }))} />
                     </div>
                     <div>
-                      <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>CVV</label>
-                      <input className="input-field" placeholder="123" type="password" value={form.cvv} onChange={e => setForm(f => ({ ...f, cvv: e.target.value }))} />
+                      <label htmlFor="card-cvv" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>CVV</label>
+                      <input id="card-cvv" className="input-field" placeholder="123" type="password" value={form.cvv} onChange={e => setForm(f => ({ ...f, cvv: e.target.value }))} />
                     </div>
                   </div>
                 </div>
@@ -1081,6 +1202,7 @@ function WishlistPage({ setPage, setSelectedItem, language }) {
   const { wishlist, setWishlist } = useApp();
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
       <h1 className="page-header">My Wishlist</h1>
       <p style={{ color: "var(--gray)", marginBottom: 32 }}>{wishlist.length} saved items</p>
       {wishlist.length === 0 ? (
@@ -1099,120 +1221,58 @@ function WishlistPage({ setPage, setSelectedItem, language }) {
   );
 }
 
-function MessagesPage({ language }) {
+
+// ✅ MessagesPage is now imported from MessagesPage.jsx
+
+function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [] }) {
   const t = TRANSLATIONS[language];
   const { user } = useApp();
-  const [activeChat, setActiveChat] = useState(null);
-  const [msgInput, setMsgInput] = useState("");
-  const [chats, setChats] = useState({
-    1: [{ from: "them", text: "Is this still available?", time: "2m ago" }, { from: "me", text: "Yes it is! Feel free to make an offer 😊", time: "1m ago" }],
-    2: [{ from: "them", text: "Can you do 45 TND?", time: "1h ago" }],
-    3: [{ from: "them", text: "Thank you! 🌸", time: "3h ago" }, { from: "me", text: "Thank you for your purchase! Hope you enjoy it ❤️", time: "3h ago" }],
-    4: [{ from: "me", text: "What's the best price?", time: "30m ago" }, { from: "them", text: "I can do 50 TND", time: "25m ago" }],
+  const [tab, setTab] = useState("listings");
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    city: user?.location || "",
+    imageUrl: user?.avatar || ""
   });
+  const [editError, setEditError] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  // ✅ FIXED: Filter listings to only show current user's listings
+  const userItems = user && user.id ? listings.filter(l => l.owner?.id === user.id || l.seller?.id === user.id) : [];
+  const u = user || { name: "User", avatar: "https://i.pravatar.cc/150?img=1", rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
 
-  const userMessages = [];
-
-  useEffect(() => {
-    if (userMessages.length > 0 && !activeChat) {
-      setActiveChat(userMessages[0]);
+  const handleEditProfile = async () => {
+    setEditError("");
+    setEditLoading(true);
+    try {
+      if (!user?.id) throw new Error("User not found");
+      const response = await api.updateProfile(user.id, editForm);
+      if (response?.id) {
+        // Update user in context and localStorage
+        const updatedUser = {
+          ...user,
+          name: editForm.fullName,
+          email: editForm.email,
+          phone: editForm.phone,
+          location: editForm.city,
+          avatar: editForm.imageUrl
+        };
+        setUser(updatedUser);
+        localStorage.setItem('swaptn_user', JSON.stringify(updatedUser));
+        setEditMode(false);
+        alert("✅ Profile updated successfully!");
+      }
+    } catch (err) {
+      setEditError(err.message || "Failed to update profile");
+    } finally {
+      setEditLoading(false);
     }
-  }, [userMessages, activeChat]);
-
-  const sendMsg = () => {
-    if (!msgInput.trim()) return;
-    setChats(c => ({ ...c, [activeChat.id]: [...(c[activeChat.id] || []), { from: "me", text: msgInput, time: "just now" }] }));
-    setMsgInput("");
   };
 
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
-      <h1 className="page-header">Messages</h1>
-      {!user ? (
-        <div style={{ background: "white", borderRadius: "var(--radius)", padding: 40, textAlign: "center", boxShadow: "var(--shadow)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Sign in to view messages</div>
-          <div style={{ color: "var(--gray)", marginBottom: 24 }}>You need to be logged in to access your conversations</div>
-        </div>
-      ) : userMessages.length === 0 ? (
-        <div style={{ background: "white", borderRadius: "var(--radius)", padding: 40, textAlign: "center", boxShadow: "var(--shadow)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No conversations yet</div>
-          <div style={{ color: "var(--gray)" }}>Start a conversation by messaging a seller</div>
-        </div>
-      ) : (
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 0, background: "white", borderRadius: "var(--radius)", boxShadow: "var(--shadow)", overflow: "hidden", height: 560 }}>
-        {/* Conversation List */}
-        <div style={{ borderRight: "1px solid var(--border)", overflowY: "auto" }}>
-          {userMessages.map(msg => (
-            <div key={msg.id} onClick={() => setActiveChat(msg)} style={{
-              display: "flex", gap: 12, padding: 16, cursor: "pointer", borderBottom: "1px solid var(--border)",
-              background: activeChat?.id === msg.id ? "var(--teal-light)" : "white", transition: "background 0.2s"
-            }}>
-              <div style={{ position: "relative" }}>
-                <img src={msg.avatar} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} alt="" />
-                {msg.unread && <div style={{ position: "absolute", top: 0, right: 0, width: 12, height: 12, background: "var(--teal)", borderRadius: "50%", border: "2px solid white" }} />}
-              </div>
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{msg.otherUser}</span>
-                  <span style={{ fontSize: 12, color: "var(--gray)" }}>{msg.time}</span>
-                </div>
-                <div style={{ fontSize: 13, color: "var(--gray)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{msg.lastMessage}</div>
-                <div style={{ fontSize: 11, color: "var(--teal)", marginTop: 2 }}>Re: {msg.item}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Chat Window */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {activeChat && (
-            <>
-              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 12 }}>
-                <img src={activeChat.avatar} style={{ width: 40, height: 40, borderRadius: "50%" }} alt="" />
-                <div>
-                  <div style={{ fontWeight: 700 }}>{activeChat.otherUser}</div>
-                  <div style={{ fontSize: 12, color: "var(--gray)" }}>Re: {activeChat.item}</div>
-                </div>
-              </div>
-              <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-                {(chats[activeChat.id] || []).map((msg, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: msg.from === "me" ? "flex-end" : "flex-start" }}>
-                    <div style={{
-                      maxWidth: "70%", padding: "10px 16px", borderRadius: 18,
-                      background: msg.from === "me" ? "var(--teal)" : "var(--light-gray)",
-                      color: msg.from === "me" ? "white" : "var(--dark)",
-                      fontSize: 14
-                    }}>
-                      <div>{msg.text}</div>
-                      <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, textAlign: "right" }}>{msg.time}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border)", display: "flex", gap: 10 }}>
-                <input className="input-field" style={{ flex: 1, borderRadius: 50 }} placeholder="Type a message…" value={msgInput} onChange={e => setMsgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} />
-                <button className="btn-primary" style={{ padding: "10px 20px" }} onClick={sendMsg}>Send ➤</button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      )}
-    </div>
-  );
-}
-
-function ProfilePage({ setPage, setUser, language }) {
-  const t = TRANSLATIONS[language];
-  const { user } = useApp();
-  const [tab, setTab] = useState("listings");
-  const userItems = [];
-  const u = user || { name: "User", avatar: "https://i.pravatar.cc/150?img=1", rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
-
-  return (
-    <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
       {/* Profile Header */}
       <div className="card" style={{ padding: 40, marginBottom: 32 }}>
         <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -1236,8 +1296,17 @@ function ProfilePage({ setPage, setUser, language }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button className="btn-primary" style={{ padding: "10px 24px" }} onClick={() => setPage("sell")}>+ List Item</button>
-            <button className="btn-secondary" style={{ padding: "10px 24px" }}>Edit Profile</button>
-            <button className="btn-secondary" style={{ padding: "10px 24px", color: "var(--coral)", borderColor: "var(--coral)" }} onClick={() => { setUser(null); setPage("home"); }}>Déconnexion</button>
+            <button className="btn-secondary" style={{ padding: "10px 24px" }} onClick={() => {
+              setEditForm({
+                fullName: user?.name || "",
+                email: user?.email || "",
+                phone: user?.phone || "",
+                city: user?.location || "",
+                imageUrl: user?.avatar || ""
+              });
+              setEditMode(true);
+            }}>Edit Profile</button>
+            <button className="btn-secondary" style={{ padding: "10px 24px", color: "var(--coral)", borderColor: "var(--coral)" }} onClick={() => { setUser(null); localStorage.removeItem('swaptn_user'); api.logout(); setPage("home"); }}>Déconnexion</button>
           </div>
         </div>
       </div>
@@ -1255,9 +1324,15 @@ function ProfilePage({ setPage, setUser, language }) {
       </div>
 
       {tab === "listings" && (
-        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-          <p>Your listings will appear here once you post them</p>
-        </div>
+        userItems.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+            <p>Your listings will appear here once you post them</p>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
+            {userItems.map(item => <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />)}
+          </div>
+        )
       )}
       {tab === "sold" && (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
@@ -1284,6 +1359,40 @@ function ProfilePage({ setPage, setUser, language }) {
       {tab === "orders" && (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
           <p>Your orders will appear here</p>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {editMode && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
+          <div className="card" style={{ width: "100%", maxWidth: 500, padding: 32, animation: "fadeIn 0.3s ease" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 900, marginBottom: 24 }}>Edit Profile</h2>
+            
+            {editError && <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14 }}>{editError}</div>}
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[["Full Name", "fullName"], ["Email", "email"], ["Phone", "phone"], ["City", "city"], ["Avatar URL", "imageUrl"]].map(([label, key]) => (
+                <div key={key}>
+                  <label htmlFor={`profile-${key}`} style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
+                  <input 
+                    id={`profile-${key}`}
+                    className="input-field" 
+                    placeholder={label}
+                    value={editForm[key]}
+                    onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                    disabled={editLoading}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+              <button className="btn-secondary" style={{ flex: 1, padding: 12 }} onClick={() => setEditMode(false)} disabled={editLoading}>Cancel</button>
+              <button className="btn-primary" style={{ flex: 1, padding: 12, justifyContent: "center" }} onClick={handleEditProfile} disabled={editLoading}>
+                {editLoading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -1330,76 +1439,110 @@ function LoginPage({ setPage, language }) {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ email: "", password: "", name: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handle = () => {
+  const handle = async () => {
     setError("");
+    setLoading(true);
     
-    if (isLogin) {
-      if (!form.email || !form.password) {
-        setError("Please fill all fields");
-        return;
+    try {
+      if (isLogin) {
+        // Login
+        const response = await api.login(form.email, form.password);
+        if (response?.token) {
+          const userData = { 
+            id: response.id,
+            name: response.fullName,
+            email: response.email,
+            avatar: response.imageUrl || `https://i.pravatar.cc/150?u=${response.email}`,
+            rating: 0,
+            sales: 0,
+            location: "Tunisia",
+            bio: "User",
+            joined: new Date().getFullYear().toString(),
+            followers: 0,
+            following: 0
+          };
+          setUser(userData);
+          localStorage.setItem('swaptn_user', JSON.stringify(userData));
+          setPage("home");
+        }
+      } else {
+        // Register
+        const response = await api.register(form.name, form.email, form.password);
+        if (response?.id) {
+          // Auto-login after registration
+          const loginResponse = await api.login(form.email, form.password);
+          if (loginResponse?.token) {
+            const userData = { 
+              id: loginResponse.id,
+              name: loginResponse.fullName,
+              email: loginResponse.email,
+              avatar: loginResponse.imageUrl || `https://i.pravatar.cc/150?u=${loginResponse.email}`,
+              rating: 0,
+              sales: 0,
+              location: "Tunisia",
+              bio: "New seller",
+              joined: new Date().getFullYear().toString(),
+              followers: 0,
+              following: 0
+            };
+            setUser(userData);
+            localStorage.setItem('swaptn_user', JSON.stringify(userData));
+            setPage("home");
+          }
+        }
       }
-      setUser({ name: form.email.split("@")[0], email: form.email, avatar: "https://i.pravatar.cc/150?img=50", rating: 0, sales: 0, location: "Tunisia", bio: "User", joined: new Date().getFullYear().toString(), followers: 0, following: 0 });
-      setPage("home");
-    } else {
-      if (!form.name || !form.email || !form.password) {
-        setError("Please fill all fields");
-        return;
-      }
-      setUser({ name: form.name, email: form.email, avatar: "https://i.pravatar.cc/150?img=50", rating: 0, sales: 0, location: "Tunisia", bio: "New seller", joined: new Date().getFullYear().toString(), followers: 0, following: 0 });
-      setPage("home");
+    } catch (err) {
+      setError(err.message || "Authentication failed. Please try again.");
+      console.error("Auth error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.4s ease" }}>
+      <div style={{ position: "absolute", top: 24, left: 24 }}>
+        <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>← Back to Home</button>
+      </div>
       <div style={{ width: "100%", maxWidth: 440 }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 60, height: 60, background: "linear-gradient(135deg, var(--teal), var(--teal-dark))", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "white", fontWeight: 900, margin: "0 auto 16px" }}>V</div>
+          <div style={{ width: 60, height: 60, background: "linear-gradient(135deg, var(--teal), var(--teal-dark))", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "white", fontWeight: 900, margin: "0 auto 16px" }}>SW</div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 900 }}>{isLogin ? "Welcome back!" : "Join SwapTn"}</h1>
           <p style={{ color: "var(--gray)", marginTop: 8 }}>{isLogin ? "Sign in to your account" : "Create your free account"}</p>
         </div>
 
         <div className="card" style={{ padding: 36 }}>
-          {/* Social Logins */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-            <button onClick={handle} style={{
-              padding: 12, border: "2px solid var(--border)", borderRadius: "var(--radius-sm)",
-              background: "white", cursor: "pointer", fontWeight: 600, fontSize: 14,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "border-color 0.2s", width: 160
-            }}>🌐 Google</button>
-          </div>
-          <div style={{ textAlign: "center", color: "var(--gray)", fontSize: 13, marginBottom: 20 }}>— or with email —</div>
-
           {error && <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>{error}</div>}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {!isLogin && (
               <div>
-                <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name</label>
-                <input className="input-field" placeholder="Yassine cherif" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                <label htmlFor="fullname-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name</label>
+                <input id="fullname-input" className="input-field" placeholder="Yassine Cherif" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={loading} />
               </div>
             )}
             <div>
-              <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Email</label>
-              <input className="input-field" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              <label htmlFor="email-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Email</label>
+              <input id="email-input" className="input-field" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={loading} />
             </div>
             <div>
-              <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Password</label>
-              <input className="input-field" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+              <label htmlFor="password-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Password</label>
+              <input id="password-input" className="input-field" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} disabled={loading} />
             </div>
           </div>
 
           {isLogin && <div style={{ textAlign: "right", marginTop: 8 }}><a href="#" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 500 }}>Forgot password?</a></div>}
 
-          <button className="btn-primary" style={{ width: "100%", marginTop: 24, padding: 14, fontSize: 16, justifyContent: "center" }} onClick={handle}>
-            {isLogin ? "Sign In →" : "Create Account →"}
+          <button className="btn-primary" style={{ width: "100%", marginTop: 24, padding: 14, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handle} disabled={loading}>
+            {loading ? "Loading..." : isLogin ? "Sign In →" : "Create Account →"}
           </button>
         </div>
 
         <p style={{ textAlign: "center", marginTop: 20, color: "var(--gray)", fontSize: 14 }}>
           {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <span onClick={() => { setIsLogin(!isLogin); setError(""); setForm({ email: "", password: "", name: "" }); }} style={{ color: "var(--teal)", fontWeight: 600, cursor: "pointer" }}>
+          <span onClick={() => { if (!loading) { setIsLogin(!isLogin); setError(""); setForm({ email: "", password: "", name: "" }); } }} style={{ color: "var(--teal)", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}>
             {isLogin ? "Sign up" : "Sign in"}
           </span>
         </p>
@@ -1408,7 +1551,7 @@ function LoginPage({ setPage, language }) {
   );
 }
 
-function NotificationsPage({ language }) {
+function NotificationsPage({ language, setPage }) {
   const t = TRANSLATIONS[language];
   const notifs = [
     { icon: "❤️", text: "mehdi_y liked your Nike Air Force 1 listing", time: "5 min ago", unread: true },
@@ -1421,6 +1564,7 @@ function NotificationsPage({ language }) {
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
       <h1 className="page-header">Notifications</h1>
       <div className="card" style={{ overflow: "hidden" }}>
         {notifs.map((n, i) => (
@@ -1482,7 +1626,7 @@ function Footer({ setPage, language }) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [page, setPage] = useState("home");
+  const [page, setPage] = useState(() => localStorage.getItem('swaptn_page') || "home");
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -1490,23 +1634,68 @@ export default function App() {
   const [wishlist, setWishlist] = useState([]);
   const [user, setUser] = useState(null);
   const [language, setLanguage] = useState("en");
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const ctx = { cart, setCart, wishlist, setWishlist, user, setUser, language, setLanguage };
+  // ─── Load user from localStorage on mount ──────────────────────────────────
+  useEffect(() => {
+    try {
+      if (api.isLoggedIn()) {
+        const savedUser = localStorage.getItem('swaptn_user');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      }
+    } catch (err) {
+      console.error("Auth check failed:", err);
+    }
+  }, []);
+
+  // ─── Save current page to localStorage ──────────────────────────────────────
+  useEffect(() => {
+    localStorage.setItem('swaptn_page', page);
+  }, [page]);
+
+  // ─── Fetch listings on mount and when needed ───────────────────────────────
+  useEffect(() => {
+    const fetchListingData = async () => {
+      try {
+        setLoading(true);
+        const data = await api.fetchListings();
+        setListings(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch listings:", err);
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchListingData();
+  }, []);
+
+  const ctx = { 
+    cart, setCart, 
+    wishlist, setWishlist, 
+    user, setUser, 
+    language, setLanguage,
+    listings, setListings,
+    loading
+  };
 
   const renderPage = () => {
     switch (page) {
       case "home": return <HomePage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
-      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} />;
+      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} listings={listings} loading={loading} />;
       case "item": return <ItemPage item={selectedItem} setPage={setPage} setSelectedSeller={setSelectedSeller} language={language} />;
       case "sell": return <SellPage setPage={setPage} language={language} />;
       case "cart": return <CartPage setPage={setPage} language={language} />;
       case "checkout": return <CheckoutPage setPage={setPage} language={language} />;
       case "wishlist": return <WishlistPage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
-      case "messages": return <MessagesPage language={language} />;
-      case "profile": return <ProfilePage setPage={setPage} setUser={setUser} language={language} />;
+      case "messages": return <MessagesPageComponent language={language} setPage={setPage} user={user} TRANSLATIONS={TRANSLATIONS} />;
+      case "profile": return <ProfilePage setPage={setPage} setSelectedItem={setSelectedItem} setUser={setUser} language={language} listings={listings} />;
       case "seller": return <SellerPage setPage={setPage} sellerUsername={selectedSeller} language={language} />;
       case "login": return <LoginPage setPage={setPage} language={language} />;
-      case "notifications": return <NotificationsPage language={language} />;
+      case "notifications": return <NotificationsPage language={language} setPage={setPage} />;
       default: return <HomePage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
     }
   };

@@ -1,21 +1,27 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import com.cherifyedeshemdenebenhamed.demo.configuration.JwtService;
-import com.cherifyedeshemdenebenhamed.demo.dto.*;
-import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
-import com.cherifyedeshemdenebenhamed.demo.model.Review;
-import com.cherifyedeshemdenebenhamed.demo.model.User;
-import com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository;
-import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import com.cherifyedeshemdenebenhamed.demo.configuration.JwtService;
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
+import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
+import com.cherifyedeshemdenebenhamed.demo.dto.RegisterRequest;
+import com.cherifyedeshemdenebenhamed.demo.dto.RegisterResponse;
+import com.cherifyedeshemdenebenhamed.demo.dto.UpdateUserRequest;
+import com.cherifyedeshemdenebenhamed.demo.dto.UserResponse;
+import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
+import com.cherifyedeshemdenebenhamed.demo.model.Review;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 
 @Service
 public class UserService {
@@ -56,7 +62,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
         String token = jwtService.generateToken(user);
-        return new LoginResponse("Login successful",token);
+        return new LoginResponse("Login successful", token, user.getId(), user.getFullName(), user.getEmail(), user.getImageUrl());
     }
 
 
@@ -89,6 +95,14 @@ public class UserService {
             user.setFullName(request.getFullName());
         }
 
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            // Check if email already exists (and it's not the same user's current email)
+            if (!request.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+            }
+            user.setEmail(request.getEmail());
+        }
+
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
         }
@@ -117,7 +131,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        List<Review> reviews = reviewRepository.findByReviewedUserId(userId);
+        List<Review> reviews = reviewRepository.findByReviewedUser_Id(userId);
         if (reviews.isEmpty()) {
             user.setRating(0.0);
         } else {
