@@ -1,24 +1,21 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.cherifyedeshemdenebenhamed.demo.repository.usersRepository;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
-
-import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final usersRepository UserRepository;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public CustomUserDetailsService(usersRepository UserRepository ) {
+        this.UserRepository = UserRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+        return UserRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }

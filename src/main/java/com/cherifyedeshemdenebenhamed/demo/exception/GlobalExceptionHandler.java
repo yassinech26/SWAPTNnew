@@ -76,14 +76,13 @@ public class GlobalExceptionHandler {
     }
 
     // 4) Capture de toutes les autres erreurs imprévues (Server Error)
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleAny(Exception ex, HttpServletRequest request) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Une erreur interne est survenue sur le serveur",
-                request.getRequestURI()
-        );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-}
+@ExceptionHandler(Exception.class)
+public ResponseEntity<ErrorResponse> handleAny(Exception ex, HttpServletRequest request) {
+    ErrorResponse error = new ErrorResponse(
+            LocalDateTime.now(),
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Une erreur interne est survenue sur le serveur",
+            request.getRequestURI()
+    );
+    return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+}}

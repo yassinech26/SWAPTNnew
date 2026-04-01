@@ -57,7 +57,7 @@ const TRANSLATIONS = {
     searchItems: "Search brands, items…", noResults: "No items found", filter: "Filter", sort: "Sort by", newest: "Newest",
     priceHigh: "Price: High to Low", priceLow: "Price: Low to High", title: "Title", brand: "Brand", 
     category: "Category", condition: "New", new: "New", used: "Used", size: "Size", price: "Price", description: "Description",
-    details: "Details", seller: "Seller", location: "Location", condition: "Condition", 
+    details: "Details", seller: "Seller", location: "Location", cond: "Condition",
     addToCart: "Add to Cart", addToWishlist: "Add to Wishlist", removeFromCart: "Remove from Cart",
     profile: "Profile", notifications: "Notifications", home: "Home", signOut: "Sign Out", 
     email: "Email", password: "Password", name: "Name", signUp: "Sign up", signIn: "Sign in",
@@ -81,7 +81,7 @@ const TRANSLATIONS = {
     searchItems: "Rechercher marques, articles…", noResults: "Aucun élément trouvé", filter: "Filtre", sort: "Trier par", newest: "Plus récent",
     priceHigh: "Prix: Élevé à Bas", priceLow: "Prix: Bas à Élevé", title: "Titre", brand: "Marque",
     category: "Catégorie", condition: "État", new: "Neuf", used: "Utilisé", size: "Taille", price: "Prix", description: "Description",
-    details: "Détails", seller: "Vendeur", location: "Lieu", condition: "État",
+    details: "Détails", seller: "Vendeur", location: "Lieu", cond: "État",
     addToCart: "Ajouter au panier", addToWishlist: "Ajouter aux favoris", removeFromCart: "Retirer du panier",
     profile: "Profil", notifications: "Notifications", home: "Accueil", signOut: "Déconnexion",
     email: "Email", password: "Mot de passe", name: "Nom", signUp: "S'inscrire", signIn: "Se connecter",
@@ -308,7 +308,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
         <div style={{ flex: 1 }}></div>
 
         {/* Search */}
-        <div style={{ maxWidth: 500, position: "relative", width: "100%", maxWidth: 500 }}>
+        <div style={{ maxWidth: 500, position: "relative", width: "100%"}}>
           <input
             className="input-field"
             style={{ paddingLeft: 44, borderRadius: 50 }}

@@ -17,23 +17,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // This method will return true if a user with the given email exists in the
     // database, and false otherwise.
     boolean existsByEmail(String email);
+    
 
-    /*
-     * in login you:
-     * Check if email exists (using repo)
-     * Then verify the password (in the service layer)
-     */
-
-    /*
-     * Repository should ONLY:
-     * find user
-     * save user
-     * delete user
-     * It should NOT:
-     * compare passwords
-     * encode passwords
-     * generate JWT
-     * validate business rules
-     * That is the job of the Service layer.
-     */
 }
