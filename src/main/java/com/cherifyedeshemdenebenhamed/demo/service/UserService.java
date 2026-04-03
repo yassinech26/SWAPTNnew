@@ -26,7 +26,8 @@ public class UserService {
     private final JwtService jwtService;
 
     @Autowired
-    public UserService(UserRepository userRepository, ReviewRepository reviewRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UserService(UserRepository userRepository, ReviewRepository reviewRepository,
+            PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.reviewRepository = reviewRepository;
         this.jwtService = jwtService;
@@ -56,15 +57,18 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
         String token = jwtService.generateToken(user);
-        return new LoginResponse("Login successful",token);
+        return new LoginResponse("Login successful", token);
     }
-
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
-    // This method retrieves the currently authenticated user from the Spring Security context. It checks if the authentication object and its principal are present, and if so, it casts the principal to a User object and returns it. If the user is not authenticated, it throws an UNAUTHORIZED exception.
+
+    // This method retrieves the currently authenticated user from the Spring
+    // Security context. It checks if the authentication object and its principal
+    // are present, and if so, it casts the principal to a User object and returns
+    // it. If the user is not authenticated, it throws an UNAUTHORIZED exception.
     private User getCurrentAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -109,15 +113,14 @@ public class UserService {
                 savedUser.getEmail(),
                 savedUser.getPhone(),
                 savedUser.getCity(),
-                savedUser.getImageUrl()
-        );
+                savedUser.getImageUrl());
     }
 
     public void recalculateMoyenne(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        List<Review> reviews = reviewRepository.findByReviewedUserId(userId);
+        List<Review> reviews = reviewRepository.findByReviewedUser_Id(userId);
         if (reviews.isEmpty()) {
             user.setRating(0.0);
         } else {

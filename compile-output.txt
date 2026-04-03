@@ -1,0 +1,62 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------< com.cherifyedeshemdenebenhamed:demo >-----------------
+[INFO] Building SwapTN 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ demo ---
+[INFO] Deleting C:\Users\mouldi hemdane\Desktop\SWAPTNnew\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ demo ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ demo ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 39 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/configuration/SecurityConfig.java: C:\Users\mouldi hemdane\Desktop\SWAPTNnew\src\main\java\com\cherifyedeshemdenebenhamed\demo\configuration\SecurityConfig.java uses or overrides a deprecated API.
+[INFO] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/configuration/SecurityConfig.java: Recompile with -Xlint:deprecation for details.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[3,54] cannot find symbol
+  symbol:   class usersRepository
+  location: package com.cherifyedeshemdenebenhamed.demo.repository
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[10,19] cannot find symbol
+  symbol:   class usersRepository
+  location: class com.cherifyedeshemdenebenhamed.demo.service.CustomUserDetailsService
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[12,37] cannot find symbol
+  symbol:   class usersRepository
+  location: class com.cherifyedeshemdenebenhamed.demo.service.CustomUserDetailsService
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/UserService.java:[120,48] cannot find symbol
+  symbol:   method findByReviewedUserId(java.lang.Long)
+  location: variable reviewRepository of type com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository
+[INFO] 4 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.044 s
+[INFO] Finished at: 2026-03-22T17:36:53+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project demo: Compilation failure: Compilation failure: 
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[3,54] cannot find symbol
+[ERROR]   symbol:   class usersRepository
+[ERROR]   location: package com.cherifyedeshemdenebenhamed.demo.repository
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[10,19] cannot find symbol
+[ERROR]   symbol:   class usersRepository
+[ERROR]   location: class com.cherifyedeshemdenebenhamed.demo.service.CustomUserDetailsService
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/CustomUserDetailsService.java:[12,37] cannot find symbol
+[ERROR]   symbol:   class usersRepository
+[ERROR]   location: class com.cherifyedeshemdenebenhamed.demo.service.CustomUserDetailsService
+[ERROR] /C:/Users/mouldi hemdane/Desktop/SWAPTNnew/src/main/java/com/cherifyedeshemdenebenhamed/demo/service/UserService.java:[120,48] cannot find symbol
+[ERROR]   symbol:   method findByReviewedUserId(java.lang.Long)
+[ERROR]   location: variable reviewRepository of type com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
