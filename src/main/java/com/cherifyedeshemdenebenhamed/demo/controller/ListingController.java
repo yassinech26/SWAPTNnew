@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -32,7 +33,7 @@ public class ListingController {
     }
 
     @PostMapping
-    public Listing createListing(@RequestBody Listing listing) {
+    public Listing createListing(@Valid @RequestBody Listing listing) {
         // Set the owner to the currently authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User) {
@@ -43,7 +44,7 @@ public class ListingController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
+    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @Valid @RequestBody Listing listingDetails) {
         Listing existingListing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("Listing not found"));
 

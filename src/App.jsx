@@ -862,11 +862,40 @@ function SellPage({ setPage, language }) {
   const { user, setListings } = useApp();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ title: "", category: "", brand: "", size: "", condition: "", price: "", description: "", imageUrl: "", location: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const t = TRANSLATIONS[language];
 
-  const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const update = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (fieldErrors[k]) setFieldErrors(errs => ({ ...errs, [k]: undefined }));
+  };
+
+  const handleNextStep = () => {
+    if (step === 2) {
+      const errors = {};
+      if (!form.title?.trim()) errors.title = "Title is required";
+      if (!form.category) errors.category = "Category is required";
+      if (!form.description?.trim()) errors.description = "Description is required";
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+    }
+    if (step === 3) {
+      const errors = {};
+      if (!form.price || parseFloat(form.price) <= 0) errors.price = "Price must be a positive number";
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+    }
+    
+    setFieldErrors({});
+    setStep(s => s + 1);
+  };
 
   const handlePublish = async () => {
     setError("");
@@ -961,6 +990,7 @@ function SellPage({ setPage, language }) {
                 <div key={key}>
                   <label htmlFor={`sell-${key}`} style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
                   <input id={`sell-${key}`} className="input-field" placeholder={ph} value={form[key]} onChange={e => update(key, e.target.value)} />
+                  {fieldErrors[key] && <div style={{ color: "var(--coral)", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</div>}
                 </div>
               ))}
               {[["Category", "category", CATEGORIES.slice(1)], ["Condition", "condition", CONDITIONS], ["Size", "size", SIZES]].map(([label, key, opts]) => (
@@ -970,11 +1000,13 @@ function SellPage({ setPage, language }) {
                     <option value="">Select {label.toLowerCase()}</option>
                     {opts.map(o => <option key={o}>{o}</option>)}
                   </select>
+                  {fieldErrors[key] && <div style={{ color: "var(--coral)", fontSize: 12, marginTop: 4 }}>{fieldErrors[key]}</div>}
                 </div>
               ))}
               <div>
                 <label htmlFor="sell-description" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Description</label>
                 <textarea id="sell-description" className="input-field" rows={4} placeholder="Describe any details, measurements, or flaws…" value={form.description} onChange={e => update("description", e.target.value)} style={{ resize: "vertical" }} />
+                {fieldErrors.description && <div style={{ color: "var(--coral)", fontSize: 12, marginTop: 4 }}>{fieldErrors.description}</div>}
               </div>
             </div>
           </div>
@@ -986,6 +1018,8 @@ function SellPage({ setPage, language }) {
               <input className="input-field" type="number" placeholder="0" value={form.price} onChange={e => update("price", e.target.value)} style={{ paddingRight: 60, fontSize: 24, fontWeight: 700, height: 64 }} />
               <span style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", fontSize: 18, fontWeight: 700, color: "var(--gray)" }}>TND</span>
             </div>
+            {fieldErrors.price && <div style={{ color: "var(--coral)", fontSize: 14, marginTop: -16, marginBottom: 16 }}>{fieldErrors.price}</div>}
+            
             <div style={{ background: "var(--teal-light)", borderRadius: "var(--radius-sm)", padding: 16 }}>
               <div style={{ fontWeight: 600, marginBottom: 8 }}>💡 Pricing Estimate</div>
               {[["Your earnings (after 5% fee)", `${form.price ? Math.round(form.price * 0.95) : "—"} TND`], ["Buyer pays", `${form.price ? Number(form.price) : "—"} TND`]].map(([l, v]) => (
@@ -1016,7 +1050,7 @@ function SellPage({ setPage, language }) {
 
         <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
           {step > 1 && <button className="btn-secondary" style={{ flex: 1, padding: 14 }} onClick={() => setStep(s => s - 1)} disabled={loading}>← Back</button>}
-          {step < 4 && <button className="btn-primary" style={{ flex: 1, padding: 14, justifyContent: "center" }} onClick={() => setStep(s => s + 1)} disabled={loading}>Continue →</button>}
+          {step < 4 && <button className="btn-primary" style={{ flex: 1, padding: 14, justifyContent: "center" }} onClick={handleNextStep} disabled={loading}>Continue →</button>}
         </div>
       </div>
     </div>
@@ -1549,14 +1583,6 @@ function LoginPage({ setPage, language }) {
 
 function NotificationsPage({ language, setPage }) {
   const t = TRANSLATIONS[language];
-  const notifs = [
-    { icon: "❤️", text: "mehdi_y liked your Nike Air Force 1 listing", time: "5 min ago", unread: true },
-    { icon: "💬", text: "New message from Yassine_ch about Mango Blazer", time: "12 min ago", unread: true },
-    { icon: "💸", text: "Your item Zara Floral Dress was sold for 18 TND!", time: "2 hours ago", unread: true },
-    { icon: "⭐", text: "mouldi_h left you a 5-star review", time: "1 day ago", unread: false },
-    { icon: "📦", text: "Your order has been shipped! Track it now.", time: "2 days ago", unread: false },
-    { icon: "🔔", text: "New items from sellers you follow", time: "3 days ago", unread: false },
-  ];
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
