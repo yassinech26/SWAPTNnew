@@ -2,15 +2,11 @@ package com.cherifyedeshemdenebenhamed.demo.controller;
 
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Listing;
-import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -33,18 +29,12 @@ public class ListingController {
     }
 
     @PostMapping
-    public Listing createListing(@Valid @RequestBody Listing listing) {
-        // Set the owner to the currently authenticated user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            User currentUser = (User) authentication.getPrincipal();
-            listing.setOwner(currentUser);
-        }
+    public Listing createListing(@RequestBody Listing listing) {
         return listingService.saveListing(listing);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @Valid @RequestBody Listing listingDetails) {
+    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
         Listing existingListing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("Listing not found"));
 
@@ -53,11 +43,6 @@ public class ListingController {
         existingListing.setPrice(listingDetails.getPrice());
         existingListing.setCategory(listingDetails.getCategory());
         existingListing.setStatus(listingDetails.getStatus());
-        existingListing.setBrand(listingDetails.getBrand());
-        existingListing.setSize(listingDetails.getSize());
-        existingListing.setCondition(listingDetails.getCondition());
-        existingListing.setLocation(listingDetails.getLocation());
-        existingListing.setImageUrl(listingDetails.getImageUrl());
 
         return ResponseEntity.ok(listingService.saveListing(existingListing));
     }
