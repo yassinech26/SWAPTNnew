@@ -267,10 +267,9 @@ const globalStyle = `
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
-function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language, setLanguage }) {
+function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language, setLanguage, searchVal, setSearchVal }) {
   const { cart, wishlist, user } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
   const [langOpen, setLangOpen] = useState(false);
   const t = TRANSLATIONS[language];
 
@@ -308,16 +307,36 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
         <div style={{ flex: 1 }}></div>
 
         {/* Search */}
-        <div style={{ maxWidth: 500, position: "relative", width: "100%"}}>
-          <input
-            className="input-field"
-            style={{ paddingLeft: 44, borderRadius: 50 }}
-            placeholder="Search brands, items…"
-            value={searchVal}
-            onChange={e => setSearchVal(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && setPage("browse")}
-          />
-          <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--gray)", fontSize: 16 }}>🔍</span>
+        <div style={{ maxWidth: 500, display: "flex", gap: 8, width: "100%"}}>
+          <div style={{ flex: 1, position: "relative"}}>
+            <input
+              className="input-field"
+              style={{ paddingLeft: 44, borderRadius: 50, width: "100%" }}
+              placeholder="Search brands, items…"
+              value={searchVal}
+              onChange={e => setSearchVal(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && setPage("browse")}
+            />
+            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--gray)", fontSize: 16 }}>🔍</span>
+          </div>
+          <button
+            onClick={() => setPage("browse")}
+            style={{
+              padding: "10px 20px",
+              background: "var(--primary, #333)",
+              color: "white",
+              border: "none",
+              borderRadius: 50,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 14,
+              transition: "all 0.3s ease"
+            }}
+            onMouseEnter={e => e.target.style.opacity = "0.8"}
+            onMouseLeave={e => e.target.style.opacity = "1"}
+          >
+            Search
+          </button>
         </div>
 
         {/* Spacer */}
@@ -600,24 +619,51 @@ function HomePage({ setPage, setSelectedItem, language }) {
   );
 }
 
-function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false }) {
+function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false, searchVal = "", setSearchVal }) {
   const t = TRANSLATIONS[language];
-  const [search, setSearch] = useState("");
+  const { listingError } = useApp();
   const [activeCategory, setActiveCategory] = useState(selectedCategory || "All");
   const [sortBy, setSortBy] = useState("newest");
   const [filters, setFilters] = useState({ minPrice: "", maxPrice: "", condition: "", size: "", location: "" });
   const [showFilters, setShowFilters] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searchResults, setSearchResults] = useState(null);  // null = not searched, [] = searched but no results
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     setActiveCategory(selectedCategory || "All");
   }, [selectedCategory]);
 
-  // Filter and sort listings
-  let filtered = listings.filter(item => {
-    const matchesSearch = search === "" || 
-      item.title?.toLowerCase().includes(search.toLowerCase()) || 
-      item.brand?.toLowerCase().includes(search.toLowerCase());
-    
+  // Call backend search when searchVal changes and is not empty
+  useEffect(() => {
+    if (searchVal.trim() === "") {
+      setSearchResults(null);  // Clear search results
+      setSearchError("");
+      return;
+    }
+
+    const performSearch = async () => {
+      setSearching(true);
+      setSearchError("");
+      try {
+        const results = await api.searchListings(searchVal);
+        setSearchResults(Array.isArray(results) ? results : []);
+      } catch (err) {
+        setSearchError(err.message || "Failed to search. Please try again.");
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    performSearch();
+  }, [searchVal]);
+
+  // Use search results if available, otherwise use all listings
+  const baseListings = searchResults !== null ? searchResults : listings;
+
+  // Filter and sort listings (apply other filters on top of search or all listings)
+  let filtered = baseListings.filter(item => {
     const matchesCategory = activeCategory === "All" || item.category === activeCategory;
     
     const price = parseFloat(item.price) || 0;
@@ -628,7 +674,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
     const matchesSize = !filters.size || item.size === filters.size;
     const matchesLocation = !filters.location || item.location === filters.location;
     
-    return matchesSearch && matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation;
+    return matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation;
   });
 
   // Sort
@@ -638,8 +684,38 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px", animation: "fadeIn 0.4s ease" }}>
+      {listingError && !searchVal && (
+        <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>
+          {listingError}
+        </div>
+      )}
+      {searchError && (
+        <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>
+          {searchError}
+        </div>
+      )}
       <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: "center", flexWrap: "wrap" }}>
-        <input className="input-field" style={{ maxWidth: 400, borderRadius: 50 }} placeholder="🔍 Search items, brands…" value={search} onChange={e => setSearch(e.target.value)} />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input className="input-field" style={{ maxWidth: 400, borderRadius: 50 }} placeholder="🔍 Search items, brands…" value={searchVal} onChange={e => setSearchVal(e.target.value)} />
+          <button
+            onClick={() => setPage("browse")}
+            style={{
+              padding: "10px 20px",
+              background: "var(--primary, #333)",
+              color: "white",
+              border: "none",
+              borderRadius: 50,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 14,
+              transition: "all 0.3s ease"
+            }}
+            onMouseEnter={e => e.target.style.opacity = "0.8"}
+            onMouseLeave={e => e.target.style.opacity = "1"}
+          >
+            Search
+          </button>
+        </div>
         <button className="btn-secondary" style={{ padding: "10px 20px" }} onClick={() => setShowFilters(!showFilters)}>
           ⚙️ Filters {showFilters ? "▲" : "▼"}
         </button>
@@ -702,16 +778,21 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
         </div>
       )}
 
-      {loading ? (
+      {searching ? (
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
+          <div style={{ fontSize: 48, marginBottom: 16, animation: "pulse 1.5s infinite" }}>🔍</div>
+          <div>Searching for items...</div>
+        </div>
+      ) : loading && searchVal === "" ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
           <div style={{ fontSize: 48, marginBottom: 16, animation: "pulse 1.5s infinite" }}>⏳</div>
           <div>Loading items...</div>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && !searchVal ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🛍️</div>
           <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>No items found</div>
-          <div>Try adjusting your filters or search terms</div>
+          <div>Try adjusting your filters</div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
@@ -1610,8 +1691,1005 @@ function NotificationsPage({ language, setPage }) {
   );
 }
 
+// ─── NEW ARRIVALS PAGE ────────────────────────────────────────────────────────
+function NewArrivalsPage({ setPage, listings }) {
+  const newItems = listings.slice(0, 8); // Show newest items
+  return (
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">🆕 New Arrivals</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 24 }}>Check out the latest items just added to SwapTn - discover fresh finds daily!</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 20 }}>
+        {newItems.map((item, i) => (
+          <div key={i} className="card" onClick={() => { setPage("item"); }} style={{ cursor: "pointer", transition: "transform 0.2s", position: "relative" }}>
+            <div style={{ background: "var(--light-gray)", height: 200, borderRadius: 8, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--gray)", fontSize: 32 }}>👕</div>
+            <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 14 }}>{item.title || "Premium Item"}</div>
+            <div style={{ color: "var(--gray)", fontSize: 12, marginBottom: 8 }}>{item.brand || "Brand"}</div>
+            <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 14 }}>{item.price || "50"} TND</div>
+            <div style={{ position: "absolute", top: 10, right: 10, background: "var(--teal)", color: "white", padding: "4px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600 }}>NEW</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── POPULAR BRANDS PAGE ──────────────────────────────────────────────────────
+function PopularBrandsPage({ setPage }) {
+  const brands = [
+    { name: "Nike", items: 245, icon: "👟" },
+    { name: "Adidas", items: 189, icon: "⚽" },
+    { name: "Zara", items: 312, icon: "👗" },
+    { name: "H&M", items: 203, icon: "👕" },
+    { name: "ASOS", items: 156, icon: "👠" },
+    { name: "Forever 21", items: 134, icon: "💄" },
+    { name: "Urban Outfitters", items: 98, icon: "🎒" },
+    { name: "Levi's", items: 167, icon: "👖" },
+    { name: "Tommy Hilfiger", items: 89, icon: "🧥" },
+    { name: "Calvin Klein", items: 124, icon: "👔" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">⭐ Popular Brands</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Shop from the most loved brands on SwapTn. All pre-loved, all authentic.</p>
+      
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+        {brands.map((brand, i) => (
+          <div key={i} className="card" style={{ textAlign: "center", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>{brand.icon}</div>
+            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{brand.name}</div>
+            <div style={{ color: "var(--teal)", fontSize: 14, fontWeight: 500 }}>{brand.items} items</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 24, marginTop: 40, textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--gray)", marginBottom: 16 }}>Can't find your favorite brand?</p>
+        <button onClick={() => setPage("browse")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Browse All Items →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── SALES & DEALS PAGE ────────────────────────────────────────────────────────
+function SalesDealsPage({ setPage }) {
+  const deals = [
+    { title: "Spring Sale", discount: "Up to 40% OFF", description: "Refresh your wardrobe with amazing spring collections" },
+    { title: "Weekend Flash Sale", discount: "20-30% OFF", description: "24-hour limited time deals on selected items" },
+    { title: "Bundle Deals", discount: "Buy 2 Get 20% OFF", description: "Mix and match: jackets, shoes, accessories" },
+    { title: "Designer Specials", discount: "Up to 50% OFF", description: "Premium brands at unbeatable prices" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">🎉 Sales & Deals</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Grab the best bargains on SwapTn. Updated daily with new deals!</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, marginBottom: 40 }}>
+        {deals.map((deal, i) => (
+          <div key={i} style={{ background: "linear-gradient(135deg, rgba(0,176,155,0.1) 0%, rgba(0,176,155,0.05) 100%)", border: "2px solid var(--teal)", borderRadius: 12, padding: 24, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -20, right: -20, background: "var(--teal)", width: 100, height: 100, borderRadius: "50%", opacity: 0.1 }} />
+            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8, color: "var(--teal)" }}>{deal.title}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: "var(--teal)", marginBottom: 12 }}>{deal.discount}</div>
+            <div style={{ color: "var(--gray)", fontSize: 14, marginBottom: 16 }}>{deal.description}</div>
+            <button onClick={() => setPage("browse")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "8px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
+              Shop Now →
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{ background: "rgba(0,176,155,0.06)" }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12 }}>💡 Pro Tip: Save More</h3>
+        <ul style={{ lineHeight: 1.8, color: "var(--gray)", fontSize: 14, marginLeft: 20 }}>
+          <li>✓ Follow sellers to get notified when they add new items</li>
+          <li>✓ Add items to Wishlist and watch for price drops</li>
+          <li>✓ Subscribe to our newsletter for exclusive deals</li>
+          <li>✓ Buy multiple items from same seller for negotiated prices</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── SELLER GUIDE PAGE ────────────────────────────────────────────────────────
+function SellerGuidePage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">📖 Seller Guide</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Everything you need to know about selling on SwapTn successfully</p>
+
+      <div style={{ display: "grid", gap: 24 }}>
+        {[
+          {
+            title: "✅ Before You List",
+            content: [
+              "1. Take quality photos in natural lighting from multiple angles",
+              "2. Clean and inspect the item thoroughly",
+              "3. Check for authenticity - ensure brand tags are intact",
+              "4. Gather info: brand, size, material, condition, any defects",
+              "5. Decide your price competitively by checking similar items"
+            ]
+          },
+          {
+            title: "🏆 Creating the Perfect Listing",
+            content: [
+              "• Use clear, accurate titles (e.g., 'Vintage Nike Blue Hoodie Size M')",
+              "• Write detailed descriptions: condition, fit, measurements",
+              "• Mention any flaws honestly - buyers appreciate transparency",
+              "• Use all 8 photo slots - show different angles and details",
+              "• Include close-ups of brand tags and condition markers"
+            ]
+          },
+          {
+            title: "💰 Pricing Strategy",
+            content: [
+              "• Price 20-50% below retail depending on condition",
+              "• Compare similar items that sold recently",
+              "• Factor in: brand, condition, demand, season",
+              "• Start slightly higher to allow for negotiation",
+              "• Bundle items to attract bulk buyers"
+            ]
+          },
+          {
+            title: "💬 Communicating with Buyers",
+            content: [
+              "• Respond to messages within 24 hours",
+              "• Be honest about condition and fit",
+              "• Answer questions about measurements and materials",
+              "• Be open to negotiation - it builds reputation",
+              "• Provide tracking information once sold"
+            ]
+          },
+          {
+            title: "📦 Efficient Shipping",
+            content: [
+              "• Weigh item accurately to calculate correct postage",
+              "• Package securely with padding to prevent damage",
+              "• Use tracked/registered shipping for high-value items",
+              "• Take photos of item before packing",
+              "• Send tracking info to buyer immediately",
+              "• Pack within 24 hours of sale"
+            ]
+          },
+          {
+            title: "⭐ Building Your Reputation",
+            content: [
+              "• Communicate professionally and promptly",
+              "• Deliver items in the condition described",
+              "• Encourage buyer feedback by providing great service",
+              "• Handle disputes fairly and professionally",
+              "• Your rating determines your visibility - maintain quality!"
+            ]
+          }
+        ].map((section, i) => (
+          <div key={i} className="card">
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>{section.title}</h3>
+            {section.content.map((line, j) => (
+              <div key={j} style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8, marginBottom: 4 }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <button onClick={() => setPage("sell")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 32, width: "100%" }}>
+        Start Selling Now →
+      </button>
+    </div>
+  );
+}
+
+// ─── PRICING TIPS PAGE ────────────────────────────────────────────────────────
+function PricingTipsPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">💲 Pricing Tips</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Master the art of price optimization to maximize your sales</p>
+
+      <div style={{ display: "grid", gap: 24 }}>
+        {[
+          {
+            title: "📊 Pricing Formula",
+            content: "Use this formula to calculate your price: Original Retail Price × (1 - Depreciation Factor). Depreciation varies by condition: Excellent (80-90% of retail), Good (60-80%), Fair (40-60%), Poor (20-40%)"
+          },
+          {
+            title: "🎯 Competitive Pricing",
+            content: "Search for similar items on SwapTn and note their prices. Price yours 5-10% lower if you want to sell faster, or 5-10% higher if condition is better. Aim for middle ground unless your item is unique."
+          },
+          {
+            title: "👑 Designer & Premium Brands",
+            content: "Designer items hold value better. Retain 50-70% of retail price if in good condition. Limited editions and collaboration pieces can command higher prices. Verify authenticity clearly."
+          },
+          {
+            title: "📈 Seasonal Pricing",
+            content: "Adjust prices seasonally: Winter coats sell well in fall/winter (price higher), summer dresses in spring/summer. Off-season items should be priced lower to move inventory faster."
+          },
+          {
+            title: "🎁 Bundle Deals",
+            content: "Offer 10-15% discount when buying 2-3 items together. This moves inventory faster and increases total transaction value. Good for clearing out slower-moving pieces."
+          },
+          {
+            title: "⏰ Price Strategy by Time",
+            content: "Start slightly high when listing (allows negotiation room). Lower price by 5-10% after 2 weeks if no interested buyers. Further reduction after 4 weeks. Use 'Just Added' promotion for first week."
+          },
+          {
+            title: "🚫 Pricing Mistakes to Avoid",
+            content: "• Overpricing compared to similar items (buyers scroll past)\n• Underpricing and losing profit potential\n• Not considering shipping costs in your margin\n• Ignoring market demand for the item\n• Setting round numbers (129 TND converts better than 130 TND)"
+          },
+          {
+            title: "✨ Special Pricing Tactics",
+            content: "• Use psychological pricing (99, 199, 299) for better conversion\n• Offer 'Make an Offer' option to encourage negotiations\n• Price hot items higher initially (test market)\n• Gradually reduce difficult-to-sell items\n• Monitor competitor pricing weekly"
+          }
+        ].map((section, i) => (
+          <div key={i} className="card">
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>{section.title}</h3>
+            <div style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap" }}>
+              {section.content}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SHIPPING PAGE ────────────────────────────────────────────────────────────
+function ShippingPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">📦 Shipping Information</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Everything you need to know about shipping on SwapTn</p>
+
+      <div style={{ display: "grid", gap: 24 }}>
+        {[
+          {
+            title: "🚚 Shipping Options",
+            content: [
+              "Standard Shipping: 5-7 business days (within Tunisia) - Most affordable",
+              "Express Shipping: 2-3 business days (major cities) - Premium rate",
+              "Same-Day Pickup: Available in Tunis area - Instant delivery"
+            ]
+          },
+          {
+            title: "📍 Delivery Zones",
+            content: [
+              "Zone 1 (Tunis & Ariana): All options available",
+              "Zone 2 (Major cities: Sfax, Sousse, Monastir): Standard & Express",
+              "Zone 3 (All other cities): Standard shipping only",
+              "Rural areas: May take additional 2-3 days"
+            ]
+          },
+          {
+            title: "💰 Shipping Costs",
+            content: [
+              "Standard: 7-15 TND depending on weight",
+              "Express: 15-25 TND depending on zone",
+              "Items under 500g: 5-7 TND",
+              "Items 500g-1kg: 8-12 TND",
+              "Items 1kg-2kg: 12-18 TND",
+              "Items over 2kg: Quote-based pricing"
+            ]
+          },
+          {
+            title: "📋 Shipping Process",
+            content: [
+              "1. Item sold → Buyer receives shipping notification",
+              "2. Seller has 24 hours to prepare and drop-off item",
+              "3. Shipping partner picks up the package",
+              "4. Tracking number sent to buyer",
+              "5. Item in transit - tracking updates available",
+              "6. Delivery confirmation sent to both parties"
+            ]
+          },
+          {
+            title: "🛡️ Shipping Protection",
+            content: [
+              "All items are insured during transit",
+              "Package damage covered up to 500 TND",
+              "Loss covered up to full item value",
+              "Free reshipping if item arrives damaged",
+              "Buyer protection: Return within 30 days if damaged"
+            ]
+          },
+          {
+            title: "❌ Shipping Restrictions",
+            content: [
+              "Prohibited items: Electronics over 50 TND, liquids, hazardous materials",
+              "Cannot ship: Items violating authenticity policy, counterfeit goods",
+              "Large items: Must arrange special pickup (quoted separately)",
+              "Fragile items: Use Express with insurance recommended"
+            ]
+          },
+          {
+            title: "💡 Shipping Best Practices",
+            content: [
+              "• Weigh items accurately - overestimate if unsure",
+              "• Use quality packaging to prevent damage",
+              "• Add padding and protective materials",
+              "• Clearly label package with recipient address",
+              "• Take photos before packing (evidence if damage claim)",
+              "• Provide tracking info within 2 hours of shipment"
+            ]
+          }
+        ].map((section, i) => (
+          <div key={i} className="card">
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>{section.title}</h3>
+            {Array.isArray(section.content) ? (
+              section.content.map((line, j) => (
+                <div key={j} style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8, marginBottom: 4 }}>
+                  {line}
+                </div>
+              ))
+            ) : (
+              <div style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8 }}>
+                {section.content}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ABOUT US PAGE ────────────────────────────────────────────────────────────
+function AboutUsPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">About SwapTn</h1>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>Our Mission</h3>
+        <p style={{ color: "var(--gray)", lineHeight: 1.8 }}>
+          SwapTn is Tunisia's leading online marketplace for pre-loved fashion. We believe in giving clothes a second life, making sustainable fashion accessible to everyone, and creating economic opportunities for sellers across Tunisia.
+        </p>
+      </div>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>Our Story</h3>
+        <p style={{ color: "var(--gray)", lineHeight: 1.8 }}>
+          Founded in 2023, SwapTn started with a simple idea: connecting style-conscious Tunisians who wanted to buy and sell pre-owned fashion. What began as a passion project has grown into a thriving community of over 50,000 active users buying and selling authentic clothes, shoes, and accessories across Tunisia.
+        </p>
+      </div>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>Why SwapTn?</h3>
+        <div style={{ display: "grid", gap: 12 }}>
+          {[
+            { icon: "♻️", title: "Sustainable", desc: "Reduce fashion waste and promote circular economy" },
+            { icon: "💚", title: "Affordable", desc: "Access quality brands at a fraction of retail price" },
+            { icon: "✅", title: "Authentic", desc: "Verified sellers and authentic items guaranteed" },
+            { icon: "🛡️", title: "Secure", desc: "Buyer protection and safe transactions" },
+            { icon: "🤝", title: "Community", desc: "Join thousands of fashion lovers nationwide" },
+            { icon: "💰", title: "Empowering", desc: "Earn money selling your unwanted clothes" }
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", gap: 12 }}>
+              <div style={{ fontSize: 24 }}>{item.icon}</div>
+              <div>
+                <div style={{ fontWeight: 600, color: "var(--dark)", marginBottom: 4 }}>{item.title}</div>
+                <div style={{ color: "var(--gray)", fontSize: 14 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>Values We Live By</h3>
+        <ul style={{ lineHeight: 2, color: "var(--gray)", fontSize: 14, marginLeft: 20 }}>
+          <li><strong>Transparency:</strong> Honest descriptions, no hidden fees, clear communication</li>
+          <li><strong>Trust:</strong> Every transaction is secure and protected</li>
+          <li><strong>Quality:</strong> We verify authenticity and dispute resolution ensures satisfaction</li>
+          <li><strong>Sustainability:</strong> Every sale keeps clothes out of landfills</li>
+          <li><strong>Inclusivity:</strong> Accessible to everyone, from all backgrounds and budgets</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ─── BLOG PAGE ────────────────────────────────────────────────────────────────
+function BlogPage({ setPage }) {
+  const posts = [
+    { title: "How to Spot Counterfeit Luxury Brands", date: "March 28, 2025", excerpt: "Learn the telltale signs of fake designer items and how to verify authenticity before buying..." },
+    { title: "Sustainable Fashion: Your Guide to Pre-Loved Shopping", date: "March 20, 2025", excerpt: "Discover how buying pre-owned fashion reduces waste and helps the environment..." },
+    { title: "10 Hidden Gems Under 50 TND Worth Adding to Your Wardrobe", date: "March 15, 2025", excerpt: "Uncover amazing fashion finds that won't break the bank on SwapTn..." },
+    { title: "The Psychology of Pricing: Why Your Items Sell Better at 99 TND", date: "March 10, 2025", excerpt: "Understanding buyer behavior to optimize your listings and increase sales..." },
+  ];
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">📰 Blog</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Fashion tips, marketplace insights, and sustainability stories from the SwapTn community.</p>
+
+      <div style={{ display: "grid", gap: 20 }}>
+        {posts.map((post, i) => (
+          <div key={i} className="card" style={{ cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--teal)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+            <div style={{ color: "var(--gray)", fontSize: 12, marginBottom: 8 }}>📅 {post.date}</div>
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18, fontWeight: 700 }}>{post.title}</h3>
+            <p style={{ color: "var(--gray)", lineHeight: 1.6, marginBottom: 12 }}>{post.excerpt}</p>
+            <button style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, padding: 0, cursor: "pointer", fontSize: 14 }}>Read More →</button>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 24, marginTop: 32, textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--gray)", marginBottom: 16 }}>Stay updated with SwapTn news and tips</p>
+        <button style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Subscribe to Newsletter →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CAREERS PAGE ─────────────────────────────────────────────────────────────
+function CareersPage({ setPage }) {
+  const jobs = [
+    { title: "Product Manager", location: "Tunis", type: "Full-time" },
+    { title: "Senior Full Stack Developer", location: "Remote", type: "Full-time" },
+    { title: "Customer Support Specialist", location: "Tunis", type: "Full-time" },
+    { title: "Marketing Manager", location: "Tunis", type: "Full-time" },
+    { title: "Operations Coordinator", location: "Tunis", type: "Part-time" },
+  ];
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">💼 Careers</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Join the SwapTn team and help us revolutionize sustainable fashion in Tunisia!</p>
+
+      <div className="card" style={{ marginBottom: 24, background: "rgba(0,176,155,0.06)", borderColor: "var(--teal)" }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>Why Join SwapTn?</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 14, color: "var(--gray)" }}>
+          <div>✓ Competitive salary & benefits</div>
+          <div>✓ Remote work opportunities</div>
+          <div>✓ Professional development</div>
+          <div>✓ Collaborative culture</div>
+          <div>✓ Impact on sustainability</div>
+          <div>✓ Creative freedom</div>
+        </div>
+      </div>
+
+      <h3 style={{ color: "var(--dark)", fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Open Positions</h3>
+      <div style={{ display: "grid", gap: 12, marginBottom: 24 }}>
+        {jobs.map((job, i) => (
+          <div key={i} className="card">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{job.title}</div>
+                <div style={{ fontSize: 13, color: "var(--gray)" }}>📍 {job.location} · {job.type}</div>
+              </div>
+              <button style={{ background: "var(--teal)", color: "white", border: "none", padding: "8px 16px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                Apply
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 16 }}>Don't see your role?</h3>
+        <p style={{ color: "var(--gray)", marginBottom: 12 }}>We're always looking for talented individuals. Send your resume and portfolio to:</p>
+        <div style={{ background: "rgba(0,176,155,0.06)", padding: 12, borderRadius: 8, fontSize: 14, fontWeight: 500, color: "var(--teal)" }}>
+          careers@swaptn.tn
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PRESS PAGE ───────────────────────────────────────────────────────────────
+function PressPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">📢 Press & Media</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Media inquiries, press kit, and featured stories about SwapTn</p>
+
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 16 }}>Press Contact</h3>
+        <div style={{ display: "grid", gap: 8, fontSize: 14 }}>
+          <div><strong>Email:</strong> <span style={{ color: "var(--teal)" }}>press@swaptn.tn</span></div>
+          <div><strong>Phone:</strong> <span style={{ color: "var(--teal)" }}>+216 XX XXX XXXX</span></div>
+          <div><strong>Response Time:</strong> <span style={{ color: "var(--gray)" }}>Within 24 hours</span></div>
+        </div>
+      </div>
+
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Featured In</h3>
+      <div style={{ display: "grid", gap: 12, marginBottom: 32 }}>
+        {[
+          "🌟 Tunisia Tech Weekly - 'The Platform Changing Fashion Habits'",
+          "🌟 Startup Africa - 'SwapTn: E-commerce Innovation'",
+          "🌟 Sustainability Magazine - 'Pre-Loved Fashion Reduces Waste'",
+          "🌟 entrepreneur.tn - 'Inside SwapTn's Growth Story'"
+        ].map((mention, i) => (
+          <div key={i} className="card">
+            <div style={{ color: "var(--gray)", fontSize: 14 }}>{mention}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{ background: "rgba(0,176,155,0.06)", borderColor: "var(--teal)" }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 16 }}>📥 Download Press Kit</h3>
+        <p style={{ color: "var(--gray)", fontSize: 14, marginBottom: 12 }}>Logo files, brand guidelines, and company information</p>
+        <button style={{ background: "var(--teal)", color: "white", border: "none", padding: "8px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          Download Press Kit (PDF)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HELP CENTER PAGE ─────────────────────────────────────────────────────────
+function HelpCenterPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">Help Center</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Find answers to common questions about buying and selling on SwapTn</p>
+
+      <div style={{ display: "grid", gap: 24 }}>
+        {[
+          {
+            title: "🛍️ How to Buy Items",
+            content: [
+              "1. Browse our marketplace using categories or search for specific brands/items",
+              "2. Click on an item to view details, photos, and seller information",
+              "3. Add items to your cart or purchase directly",
+              "4. Check out securely with multiple payment methods",
+              "5. Track your order and receive your item safely"
+            ]
+          },
+          {
+            title: "💰 How to Sell Items",
+            content: [
+              "1. Click 'Sell' or 'List an Item' in the navigation",
+              "2. Take clear photos of your item from multiple angles",
+              "3. Add item details: title, brand, size, condition, description",
+              "4. Set your price competitively",
+              "5. Review and publish your listing",
+              "6. Communicate with interested buyers via messages",
+              "7. Ship the item once sold and get paid within 5-7 business days"
+            ]
+          },
+          {
+            title: "🔍 How to Use Search & Filters",
+            content: [
+              "• Use the search bar to find specific brands (e.g., 'Nike', 'Adidas')",
+              "• Filter by Category: Tops, Bottoms, Dresses, Jackets, Shoes, Bags, Accessories",
+              "• Filter by Condition: New or Used items",
+              "• Filter by Size: Choose your preferred size",
+              "• Filter by Price Range: Set minimum and maximum price",
+              "• Sort by: Newest, Price (High to Low), or Price (Low to High)"
+            ]
+          },
+          {
+            title: "💳 Payment Methods",
+            content: [
+              "We accept multiple secure payment methods:",
+              "• Credit/Debit Cards (Visa, Mastercard)",
+              "• Online Banking",
+              "• Mobile Wallets",
+              "• Bank Transfers",
+              "All transactions are secured with SSL encryption"
+            ]
+          },
+          {
+            title: "📦 Shipping & Delivery",
+            content: [
+              "• Standard Shipping: 5-7 business days (within Tunisia)",
+              "• Express Shipping: 2-3 business days (available in major cities)",
+              "• Free Returns: 30 days if item doesn't match description",
+              "• Tracking: You'll receive tracking information for all shipments",
+              "• Protection: Seller covers return shipping for defective items"
+            ]
+          },
+          {
+            title: "❓ Frequently Asked Questions",
+            content: [
+              "Q: Is my payment secure? - Yes, all payments are encrypted and PCI-DSS compliant.",
+              "Q: Can I return an item? - Yes, you have 30 days for returns if item doesn't match description.",
+              "Q: How long does delivery take? - Standard: 5-7 days. Express: 2-3 days.",
+              "Q: What if I don't receive my order? - Contact our support team immediately for investigation.",
+              "Q: Can I cancel a listing? - Yes, you can cancel anytime before the item is purchased."
+            ]
+          }
+        ].map((section, i) => (
+          <div key={i} className="card">
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>{section.title}</h3>
+            {section.content.map((line, j) => (
+              <div key={j} style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8, marginBottom: 4 }}>
+                {line}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 24, marginTop: 32, textAlign: "center" }}>
+        <p style={{ fontSize: 14, color: "var(--gray)" }}>Didn't find what you're looking for?</p>
+        <button onClick={() => setPage("contact-us")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 12 }}>
+          Contact Us →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── CONTACT US PAGE ──────────────────────────────────────────────────────────
+function ContactUsPage({ setPage }) {
+  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.name && formData.email && formData.subject && formData.message) {
+      // In a real app, this would send to backend
+      console.log("Form submitted:", formData);
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      }, 3000);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">Contact Us</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Have questions? We're here to help! Reach out to our support team.</p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginBottom: 40 }}>
+        {/* Contact Information */}
+        <div>
+          <h3 style={{ color: "var(--teal)", marginBottom: 20, fontSize: 16 }}>Get In Touch</h3>
+          {[
+            { icon: "📧", title: "Email", value: "support@swaptn.tn", desc: "Response within 24 hours" },
+            { icon: "📱", title: "Phone", value: "+216 XX XXX XXXX", desc: "Mon-Fri: 10am-6pm CET" },
+            { icon: "💬", title: "Live Chat", value: "Available in app", desc: "Instant support for members" },
+            { icon: "🏢", title: "Hours", value: "Mon - Fri: 10am - 6pm", desc: "Closed on weekends & holidays" }
+          ].map((contact, i) => (
+            <div key={i} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < 3 ? "1px solid var(--border)" : "none" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{contact.icon}</div>
+              <div style={{ fontWeight: 600, color: "var(--dark)", marginBottom: 4 }}>{contact.title}</div>
+              <div style={{ fontSize: 14, color: "var(--teal)", fontWeight: 500, marginBottom: 4 }}>{contact.value}</div>
+              <div style={{ fontSize: 13, color: "var(--gray)" }}>{contact.desc}</div>
+            </div>
+          ))}
+
+          <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 16, marginTop: 20 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--teal)" }}>Follow Us</div>
+            <div style={{ display: "flex", gap: 12 }}>
+              {["Facebook", "Instagram", "Twitter"].map(social => (
+                <div key={social} style={{ fontSize: 24, cursor: "pointer" }}>
+                  {social === "Facebook" && "📘"}{social === "Instagram" && "📷"}{social === "Twitter" && "𝕏"}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Form */}
+        <div>
+          <h3 style={{ color: "var(--teal)", marginBottom: 20, fontSize: 16 }}>Send us a Message</h3>
+          {submitted && (
+            <div style={{ background: "rgba(76,175,80,0.1)", border: "1px solid #4caf50", color: "#2e7d32", padding: 16, borderRadius: 8, marginBottom: 20 }}>
+              ✓ Thank you! We've received your message. We'll get back to you within 24 hours.
+            </div>
+          )}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14 }}
+            />
+            <input
+              type="email"
+              placeholder="Your Email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14 }}
+            />
+            <input
+              type="text"
+              placeholder="Subject"
+              value={formData.subject}
+              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14 }}
+            />
+            <textarea
+              placeholder="Your Message"
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14, fontFamily: "inherit", minHeight: 120, resize: "vertical" }}
+            />
+            <button
+              type="submit"
+              disabled={!formData.name || !formData.email || !formData.subject || !formData.message}
+              style={{
+                background: !formData.name || !formData.email || !formData.subject || !formData.message ? "var(--light-gray)" : "var(--teal)",
+                color: !formData.name || !formData.email || !formData.subject || !formData.message ? "var(--gray)" : "white",
+                border: "none", padding: 12, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              Send Message →
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SAFE BUYING PAGE ─────────────────────────────────────────────────────────
+function SafeBuyingPage({ setPage }) {
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">Safe Buying Guide</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Learn how to shop safely and protect yourself on SwapTn</p>
+
+      <div style={{ display: "grid", gap: 24 }}>
+        {[
+          {
+            title: "✔️ How to Verify Sellers",
+            tips: [
+              "• Look for the ✓ Verified badge next to seller names",
+              "• Check seller ratings and reviews from previous buyers",
+              "• Read recent feedback - look for patterns of positive or negative comments",
+              "• New sellers: Start with purchases under 100 TND until they build reputation",
+              "• Avoid sellers with multiple complaints about authenticity or item condition"
+            ]
+          },
+          {
+            title: "🛡️ Secure Payment Methods",
+            tips: [
+              "• Always use SwapTn's payment system - NEVER use cash transfers",
+              "• Use verified credit/debit cards - they offer fraud protection",
+              "• Enable two-factor authentication on your account",
+              "• Don't share your payment details via messages",
+              "• Check SSL lock in your browser address bar for secure checkout",
+              "• Keep transaction receipts for your records"
+            ]
+          },
+          {
+            title: "💡 Recognizing Scams",
+            tips: [
+              "• Prices that seem too good to be true (usually are)",
+              "• Sellers who ask you to pay through unusual methods (wire transfers, gift cards)",
+              "• Items described as 'payment upon receipt' - use SwapTn escrow instead",
+              "• Pressure to buy quickly or extreme urgency",
+              "• Requests to communicate outside SwapTn's messaging system",
+              "• Photos that look professionally shot (likely stolen product images)"
+            ]
+          },
+          {
+            title: "🔍 Inspecting Item Photos",
+            tips: [
+              "• Request multiple photos from different angles",
+              "• Look for flaws, stains, wear, or damage mentioned in sellers' photos",
+              "• Ask for close-ups of specific areas if concerned",
+              "• Reverse image search to confirm photos are original (not stolen)",
+              "• Compare condition claims to photos - do they match?",
+              "• Ask for photos in natural lighting if they look artificially lit"
+            ]
+          },
+          {
+            title: "📮 Secure Delivery",
+            tips: [
+              "• Use registered/tracked shipping - track your package",
+              "• Never meet sellers in person for high-value items",
+              "• Request signature confirmation for expensive purchases",
+              "• Take photos of packaging when it arrives",
+              "• Check item condition immediately upon receipt",
+              "• Report any damage or theft to us within 48 hours",
+              "• Keep all shipping receipts and tracking numbers"
+            ]
+          },
+          {
+            title: "⚖️ Dispute Resolution",
+            tips: [
+              "• Item not as described? Open a dispute within 30 days",
+              "• Provide evidence: photos, messages, shipping receipts",
+              "• Our support team will investigate and mediate",
+              "• Most disputes resolved within 5-7 business days",
+              "• Buyers protected by our Money-Back Guarantee",
+              "• Escalate to customer service if needed"
+            ]
+          }
+        ].map((section, i) => (
+          <div key={i} className="card">
+            <h3 style={{ color: "var(--teal)", marginBottom: 12, fontSize: 18 }}>{section.title}</h3>
+            {section.tips.map((tip, j) => (
+              <div key={j} style={{ color: "var(--gray)", fontSize: 14, lineHeight: 1.8, marginBottom: 4 }}>
+                {tip}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 24, marginTop: 32 }}>
+        <h3 style={{ color: "var(--teal)", marginBottom: 12 }}>Need Help?</h3>
+        <p style={{ fontSize: 14, color: "var(--gray)", marginBottom: 16 }}>
+          If you encounter a suspicious seller or have concerns about a transaction, report it to our support team immediately.
+        </p>
+        <button onClick={() => setPage("report-issue")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+          Report an Issue →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── REPORT ISSUE PAGE ────────────────────────────────────────────────────────
+function ReportIssuePage({ setPage }) {
+  const [formData, setFormData] = useState({ issueType: "", listingId: "", description: "", email: "" });
+  const [submitted, setSubmitted] = useState(false);
+
+  const issueTypes = [
+    "Counterfeit/Fake Item",
+    "Item Not As Described",
+    "Damaged Item",
+    "Missing Item",
+    "Fraudulent Seller",
+    "Offensive Content",
+    "Other"
+  ];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (formData.issueType && formData.description && formData.email) {
+      console.log("Issue reported:", formData);
+      setSubmitted(true);
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({ issueType: "", listingId: "", description: "", email: "" });
+      }, 3000);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 700, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
+      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
+      <h1 className="page-header">Report an Issue</h1>
+      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Help us maintain a safe and trustworthy marketplace. Report any issues you encounter.</p>
+
+      <div className="card">
+        {submitted && (
+          <div style={{ background: "rgba(76,175,80,0.1)", border: "1px solid #4caf50", color: "#2e7d32", padding: 16, borderRadius: 8, marginBottom: 20 }}>
+            ✓ Thank you for reporting! Our team will investigate your report within 24-48 hours.
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: 8, color: "var(--dark)" }}>Issue Type *</label>
+            <select
+              value={formData.issueType}
+              onChange={(e) => setFormData({ ...formData, issueType: e.target.value })}
+              style={{ width: "100%", padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14 }}
+            >
+              <option value="">Select an issue type...</option>
+              {issueTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: 8, color: "var(--dark)" }}>Listing ID (if applicable)</label>
+            <input
+              type="text"
+              placeholder="e.g., #12345"
+              value={formData.listingId}
+              onChange={(e) => setFormData({ ...formData, listingId: e.target.value })}
+              style={{ width: "100%", padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: 8, color: "var(--dark)" }}>Description of Issue *</label>
+            <textarea
+              placeholder="Please describe the issue in detail. Include what happened, when it happened, and any relevant information..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              style={{ width: "100%", padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14, fontFamily: "inherit", minHeight: 140, resize: "vertical", boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: 8, color: "var(--dark)" }}>Email Address *</label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              style={{ width: "100%", padding: 12, border: "1px solid var(--border)", borderRadius: 8, fontSize: 14, boxSizing: "border-box" }}
+            />
+          </div>
+
+          <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 8, padding: 12, fontSize: 13, color: "var(--teal)" }}>
+            💡 Tip: Provide as much detail as possible. Attach screenshots or photos if you have them.
+          </div>
+
+          <button
+            type="submit"
+            disabled={!formData.issueType || !formData.description || !formData.email}
+            style={{
+              background: !formData.issueType || !formData.description || !formData.email ? "var(--light-gray)" : "var(--teal)",
+              color: !formData.issueType || !formData.description || !formData.email ? "var(--gray)" : "white",
+              border: "none", padding: 12, borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 8
+            }}
+          >
+            Submit Report →
+          </button>
+        </form>
+
+        <div style={{ borderTop: "1px solid var(--border)", marginTop: 24, paddingTop: 24 }}>
+          <p style={{ fontSize: 13, color: "var(--gray)", marginBottom: 12 }}>
+            <strong>What happens next?</strong>
+          </p>
+          <ul style={{ fontSize: 13, color: "var(--gray)", lineHeight: 1.8, marginLeft: 20 }}>
+            <li>Our support team will review your report within 24-48 hours</li>
+            <li>We'll investigate the issue and contact both parties if necessary</li>
+            <li>Actions may include warnings, account suspension, or item removal</li>
+            <li>We'll email you with the outcome of our investigation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Footer({ setPage, language }) {
   const t = TRANSLATIONS[language];
+
+  const getPageRoute = (linkName) => {
+    const linkMap = {
+      // Discover
+      "New Arrivals": "new-arrivals",
+      "Popular Brands": "popular-brands",
+      "Categories": "browse",
+      "Sales & Deals": "sales-deals",
+      
+      // Sell
+      "List an Item": "sell",
+      "Seller Guide": "seller-guide",
+      "Pricing Tips": "pricing-tips",
+      "Shipping": "shipping",
+      
+      // Support
+      "Help Center": "help-center",
+      "Contact Us": "contact-us",
+      "Safe Buying": "safe-buying",
+      "Report an Issue": "report-issue",
+      
+      // Company
+      "About Us": "about-us",
+      "Blog": "blog",
+      "Careers": "careers",
+      "Press": "press"
+    };
+    return linkMap[linkName] || "home";
+  };
+
   return (
     <footer style={{ background: "var(--dark)", color: "white", padding: "60px 24px 32px", marginTop: 80 }}>
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
@@ -1629,7 +2707,7 @@ function Footer({ setPage, language }) {
             <div key={col.title}>
               <div style={{ fontWeight: 700, marginBottom: 16 }}>{col.title}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {col.links.map(l => <span key={l} onClick={() => setPage("home")} style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = "var(--teal)"} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.55)"}>{l}</span>)}
+                {col.links.map(l => <span key={l} onClick={() => setPage(getPageRoute(l))} style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = "var(--teal)"} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.55)"}>{l}</span>)}
               </div>
             </div>
           ))}
@@ -1652,12 +2730,14 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchVal, setSearchVal] = useState("");
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [user, setUser] = useState(null);
   const [language, setLanguage] = useState("en");
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [listingError, setListingError] = useState("");
 
   // ─── Load user from localStorage on mount ──────────────────────────────────
   useEffect(() => {
@@ -1683,10 +2763,12 @@ export default function App() {
     const fetchListingData = async () => {
       try {
         setLoading(true);
+        setListingError("");
         const data = await api.fetchListings();
         setListings(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
+        setListingError(err.message || "⚠️ Failed to load items. Please refresh the page.");
         setListings([]);
       } finally {
         setLoading(false);
@@ -1701,13 +2783,14 @@ export default function App() {
     user, setUser, 
     language, setLanguage,
     listings, setListings,
-    loading
+    loading,
+    listingError
   };
 
   const renderPage = () => {
     switch (page) {
       case "home": return <HomePage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
-      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} listings={listings} loading={loading} />;
+      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} listings={listings} loading={loading} searchVal={searchVal} setSearchVal={setSearchVal} />;
       case "item": return <ItemPage item={selectedItem} setPage={setPage} setSelectedSeller={setSelectedSeller} language={language} />;
       case "sell": return <SellPage setPage={setPage} language={language} />;
       case "cart": return <CartPage setPage={setPage} language={language} />;
@@ -1718,6 +2801,29 @@ export default function App() {
       case "seller": return <SellerPage setPage={setPage} sellerUsername={selectedSeller} language={language} />;
       case "login": return <LoginPage setPage={setPage} language={language} />;
       case "notifications": return <NotificationsPage language={language} setPage={setPage} />;
+      
+      // Discover Section
+      case "new-arrivals": return <NewArrivalsPage setPage={setPage} listings={listings} />;
+      case "popular-brands": return <PopularBrandsPage setPage={setPage} />;
+      case "sales-deals": return <SalesDealsPage setPage={setPage} />;
+      
+      // Sell Section
+      case "seller-guide": return <SellerGuidePage setPage={setPage} />;
+      case "pricing-tips": return <PricingTipsPage setPage={setPage} />;
+      case "shipping": return <ShippingPage setPage={setPage} />;
+      
+      // Support Section
+      case "help-center": return <HelpCenterPage setPage={setPage} />;
+      case "contact-us": return <ContactUsPage setPage={setPage} />;
+      case "safe-buying": return <SafeBuyingPage setPage={setPage} />;
+      case "report-issue": return <ReportIssuePage setPage={setPage} />;
+      
+      // Company Section
+      case "about-us": return <AboutUsPage setPage={setPage} />;
+      case "blog": return <BlogPage setPage={setPage} />;
+      case "careers": return <CareersPage setPage={setPage} />;
+      case "press": return <PressPage setPage={setPage} />;
+      
       default: return <HomePage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
     }
   };
@@ -1726,7 +2832,7 @@ export default function App() {
     <AppContext.Provider value={ctx}>
       <style>{globalStyle}</style>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <Navbar page={page} setPage={setPage} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} language={language} setLanguage={setLanguage} />
+        <Navbar page={page} setPage={setPage} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} language={language} setLanguage={setLanguage} searchVal={searchVal} setSearchVal={setSearchVal} />
         {/* Quick Nav (mobile-friendly shortcut bar for demo) */}
         <div style={{ background: "white", borderBottom: "1px solid var(--border)", padding: "8px 24px", display: "flex", gap: 6, overflowX: "auto", fontSize: 13 }}>
           {[["🏠 Home", "home"], ["🛍️ Browse", "browse"], ["❤️ Wishlist", "wishlist"], ["💬 Messages", "messages"], ["🔔 Notifications", "notifications"], ["👤 Profile", "profile"], ["📦 Sell", "sell"]].map(([label, p]) => (

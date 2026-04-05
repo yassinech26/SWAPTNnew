@@ -38,10 +38,13 @@ export function getCurrentUserEmail() {
 // ─── GENERIC FETCH WRAPPER ────────────────────────────────────────────────────
 
 async function request(url, options = {}) {
-  const res = await fetch(API_BASE + url, {
+  // Always use relative URL - Vite proxy handles routing in dev, production proxies handle prod
+  const res = await fetch(url, {
     ...options,
     headers: { ...authHeaders(), ...options.headers },
   });
+  
+  console.log(`[API] ${options.method || 'GET'} ${url} -> ${res.status}`);
 
   if (!res.ok) {
     let errorMsg = `Error ${res.status}`;
@@ -51,6 +54,7 @@ async function request(url, options = {}) {
     } catch {
       try { errorMsg = await res.text(); } catch {}
     }
+    console.error(`[REQUEST] Failed: ${res.status} - ${errorMsg}`);
     throw new Error(errorMsg);
   }
 
@@ -62,13 +66,22 @@ async function request(url, options = {}) {
 // ─── AUTH ──────────────────────────────────────────────────────────────────────
 
 export async function login(email, password) {
-  const data = await request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-  // data = { message, token, id, fullName, email, imageUrl }
-  if (data?.token) setToken(data.token);
-  return data;
+  try {
+    console.log(`[LOGIN] Attempting login for ${email}`);
+    // Clear any expired tokens before logging in
+    clearToken();
+    const data = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    console.log(`[LOGIN] Success:`, data);
+    // data = { message, token, id, fullName, email, imageUrl }
+    if (data?.token) setToken(data.token);
+    return data;
+  } catch (err) {
+    console.error(`[LOGIN] Error:`, err);
+    throw err;
+  }
 }
 
 export async function register(fullName, email, password) {
