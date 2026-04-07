@@ -62,7 +62,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
         String token = jwtService.generateToken(user);
-        return new LoginResponse("Login successful", token, user.getId(), user.getFullName(), user.getEmail(), user.getImageUrl());
+        return new LoginResponse("Login successful", token, user.getId(), user.getFullName(), user.getEmail(), user.getImageUrl(), user.getRole().toString());
     }
 
 
@@ -134,5 +134,46 @@ public class UserService {
             user.setRating(sum / reviews.size());
         }
         userRepository.save(user);
+    }
+
+    // ─── ADMIN METHODS ───────────────────────────────────────────────────────
+
+    /**
+     * Get all users (Admin only)
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Save a user (used for role/status changes)
+     */
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
+
+    /**
+     * Get total number of users
+     */
+    public long getTotalUserCount() {
+        return userRepository.count();
+    }
+
+    /**
+     * Get count of banned users
+     */
+    public long getBannedUserCount() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getStatus() == User.Status.BANNED)
+                .count();
+    }
+
+    /**
+     * Get count of admin users
+     */
+    public long getAdminCount() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.ADMIN)
+                .count();
     }
 }

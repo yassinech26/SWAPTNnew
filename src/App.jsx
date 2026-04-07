@@ -1,6 +1,8 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import * as api from "./api";
 import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
+import { ProtectedAdminRoute } from "./ProtectedAdminRoute";
+import { AdminPage } from "./pages/AdminPage";
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -30,8 +32,8 @@ class ErrorBoundary extends React.Component {
 }
 
 // ─── CONTEXT ─────────────────────────────────────────────────────────────────
-const AppContext = createContext();
-const useApp = () => useContext(AppContext);
+export const AppContext = createContext();
+export const useApp = () => useContext(AppContext);
 
 // ─── FILTER ENUMS ──────────────────────────────────────────────────────────────
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Jackets", "Shoes", "Bags", "Accessories"];
@@ -312,7 +314,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
             <input
               className="input-field"
               style={{ paddingLeft: 44, borderRadius: 50, width: "100%" }}
-              placeholder="Search brands, items…"
+              placeholder="Search items"
               value={searchVal}
               onChange={e => setSearchVal(e.target.value)}
               onKeyDown={e => e.key === "Enter" && setPage("browse")}
@@ -384,6 +386,26 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
           <NavBtn icon="❤️" label={wishlist.length || ""} onClick={() => setPage("wishlist")} />
           <NavBtn icon="💬" label={userMessageCount || ""} onClick={() => setPage("messages")} badge={userMessageCount > 0} />
           <NavBtn icon="🛒" label={cart.length || ""} onClick={() => setPage("cart")} />
+          {user && user.role === "ADMIN" && (
+            <button 
+              onClick={() => setPage("admin")}
+              style={{
+                padding: "8px 16px",
+                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                color: "white",
+                border: "none",
+                borderRadius: 50,
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={e => e.target.style.opacity = "0.8"}
+              onMouseLeave={e => e.target.style.opacity = "1"}
+            >
+              🛡️ Admin
+            </button>
+          )}
           {user
             ? <div onClick={() => setPage("profile")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 50, border: "2px solid var(--border)", transition: "border-color 0.2s" }}>
                 <img src={user.avatar} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
@@ -624,7 +646,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
   const { listingError } = useApp();
   const [activeCategory, setActiveCategory] = useState(selectedCategory || "All");
   const [sortBy, setSortBy] = useState("newest");
-  const [filters, setFilters] = useState({ minPrice: "", maxPrice: "", condition: "", size: "", location: "" });
+  const [filters, setFilters] = useState({ minPrice: "", maxPrice: "", condition: "", size: "", location: "", brand: "" });
   const [showFilters, setShowFilters] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searchResults, setSearchResults] = useState(null);  // null = not searched, [] = searched but no results
@@ -647,7 +669,16 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
       setSearchError("");
       try {
         const results = await api.searchListings(searchVal);
-        setSearchResults(Array.isArray(results) ? results : []);
+        // Normalize search results to include avatar from database
+        const normalized = Array.isArray(results) ? results.map(item => ({
+          ...item,
+          image: item.image || item.imageUrl,
+          seller: item.owner?.fullName || item.seller || "Seller",
+          sellerAvatar: item.owner?.imageUrl || null,
+          sellerCity: item.owner?.city || item.location || "Tunisia",
+          sellerId: item.owner?.id
+        })) : [];
+        setSearchResults(normalized);
       } catch (err) {
         setSearchError(err.message || "Failed to search. Please try again.");
         setSearchResults([]);
@@ -673,8 +704,9 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
     const matchesCondition = !filters.condition || item.condition === filters.condition;
     const matchesSize = !filters.size || item.size === filters.size;
     const matchesLocation = !filters.location || item.location === filters.location;
+    const matchesBrand = !filters.brand || (item.brand && item.brand.toLowerCase().includes(filters.brand.toLowerCase()));
     
-    return matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation;
+    return matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation && matchesBrand;
   });
 
   // Sort
@@ -745,6 +777,10 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
       {/* Filter Panel */}
       {showFilters && (
         <div style={{ background: "white", borderRadius: "var(--radius)", padding: 24, marginBottom: 24, boxShadow: "var(--shadow)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, animation: "fadeIn 0.3s ease" }}>
+          <div>
+            <label htmlFor="filter-brand" style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Brand</label>
+            <input id="filter-brand" className="input-field" type="text" placeholder="Put the brand" value={filters.brand} onChange={e => setFilters(f => ({ ...f, brand: e.target.value }))} />
+          </div>
           {[["Min Price (TND)", "minPrice"], ["Max Price (TND)", "maxPrice"]].map(([label, key]) => (
             <div key={key}>
               <label htmlFor={`filter-${key}`} style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>{label}</label>
@@ -773,7 +809,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
             </select>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button className="btn-secondary" style={{ width: "100%", padding: 12 }} onClick={() => setFilters({ minPrice: "", maxPrice: "", condition: "", size: "", location: "" })}>Clear Filters</button>
+            <button className="btn-secondary" style={{ width: "100%", padding: 12 }} onClick={() => setFilters({ minPrice: "", maxPrice: "", condition: "", size: "", location: "", brand: "" })}>Clear Filters</button>
           </div>
         </div>
       )}
@@ -810,21 +846,24 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
   const [messageSending, setMessageSending] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
-  // ✅ FIXED: Get seller info from owner object - with better fallbacks
-  const sellerObj = item?.owner || { fullName: item?.seller || "Seller" };
+  // ✅ FIXED: Get seller info from owner object - avatar comes from database imageUrl
+  const sellerObj = item?.owner || {};
   const seller = { 
-    name: sellerObj?.fullName || sellerObj?.name || sellerObj?.seller || "Seller", 
-    id: sellerObj?.id,
-    avatar: sellerObj?.imageUrl || "https://i.pravatar.cc/150?img=1", 
+    name: item?.seller || sellerObj?.fullName || "Seller", 
+    id: item?.sellerId || sellerObj?.id,
+    avatar: item?.sellerAvatar || sellerObj?.imageUrl || "https://i.pravatar.cc/150?img=1", 
     rating: 4.5, 
     sales: 10, 
-    location: sellerObj?.city || sellerObj?.location || "Tunisia" 
+    location: item?.sellerCity || sellerObj?.city || item?.location || "Tunisia" 
   };
   
   // Debug log to see what we're receiving
   useEffect(() => {
-    console.log("Item data:", { item, sellerObj, seller });
+    console.log("Item data:", { item, sellerObj, seller, avatar: seller.avatar });
   }, [item]);
   
   const imgs = [item?.image].filter(Boolean);
@@ -876,45 +915,140 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-            <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14 }} onClick={handleCart}>
-              {addedToCart ? "✅ Added to Cart!" : "🛒 Add to Cart"}
-            </button>
-            <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14, background: "linear-gradient(135deg, #ff6b6b, #ee5a24)" }} onClick={() => setPage("checkout")}>
-              ⚡ Buy Now
-            </button>
-          </div>
-          <button onClick={() => { setLiked(!liked); liked ? setWishlist(w => w.filter(i => i.id !== item.id)) : setWishlist(w => [...w, item]); }} style={{
-            width: "100%", padding: 12, border: `2px solid ${liked ? "var(--coral)" : "var(--border)"}`,
-            borderRadius: 50, background: liked ? "#fff0f0" : "white",
-            color: liked ? "var(--coral)" : "var(--gray)",
-            fontWeight: 600, fontSize: 15, marginBottom: 24, transition: "all 0.2s"
-          }}>
-            {liked ? "❤️ Saved to Wishlist" : "🤍 Save to Wishlist"}
+          {(!user || user.id !== seller.id) ? (
+            <>
+              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+                <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14 }} onClick={() => {
+                  if (user && user.id === seller.id) {
+                    alert("❌ You cannot buy your own listing!");
+                    return;
+                  }
+                  handleCart();
+                }}>
+                  {addedToCart ? "✅ Added to Cart!" : "🛒 Add to Cart"}
+                </button>
+                <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14, background: "linear-gradient(135deg, #ff6b6b, #ee5a24)" }} onClick={() => {
+                  if (user && user.id === seller.id) {
+                    alert("❌ You cannot buy your own listing!");
+                    return;
+                  }
+                  setPage("checkout");
+                }}>
+                  ⚡ Buy Now
+                </button>
+              </div>
+              <button onClick={() => { setLiked(!liked); liked ? setWishlist(w => w.filter(i => i.id !== item.id)) : setWishlist(w => [...w, item]); }} style={{
+                width: "100%", padding: 12, border: `2px solid ${liked ? "var(--coral)" : "var(--border)"}`,
+                borderRadius: 50, background: liked ? "#fff0f0" : "white",
+                color: liked ? "var(--coral)" : "var(--gray)",
+                fontWeight: 600, fontSize: 15, marginBottom: 24, transition: "all 0.2s"
+              }}>
+                {liked ? "❤️ Saved to Wishlist" : "🤍 Save to Wishlist"}
+              </button>
+              {/* ✅ FIXED: Message button now creates conversation */}
+              <button className="btn-secondary" style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, opacity: messageSending ? 0.6 : 1, cursor: messageSending ? "not-allowed" : "pointer" }} onClick={async () => {
+                if (!user) {
+                  alert("🔒 Please log in to message the seller");
+                  setPage("login");
+                  return;
+                }
+                if (user.id === seller.id) {
+                  alert("❌ You cannot message yourself");
+                  return;
+                }
+                setMessageSending(true);
+                try {
+                  const conversation = await api.createConversation(item.id, seller.id);
+                  if (conversation?.id) {
+                    alert("✅ Conversation started! Redirecting to Messages...");
+                    setPage("messages");
+                  }
+                } catch (err) {
+                  console.error("Conversation error:", err);
+                  alert("❌ " + (err.message || "Failed to start conversation"));
+                } finally {
+                  setMessageSending(false);
+                }
+              }} disabled={messageSending}>
+                {messageSending ? "⏳ Starting chat..." : "💬 Message Seller"}
+              </button>
+            </>
+          ) : (
+            <div style={{ background: "#fff3cd", border: "2px solid #ffc107", padding: "16px", borderRadius: "12px", textAlign: "center", marginBottom: 32, fontWeight: "600", color: "#856404", fontSize: 15 }}>
+              ⚠️ This is your listing - You cannot purchase your own item
+            </div>
+          )}
+
+          {/* Report Button */}
+          <button style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, background: "#fff", color: "#dc2626", border: "2px solid #fecaca", borderRadius: 50, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "all 0.2s", opacity: reportSubmitting ? 0.6 : 1 }} onClick={() => setShowReportModal(true)} disabled={reportSubmitting}>
+            🚩 Report this Listing
           </button>
-          {/* ✅ FIXED: Message button now creates conversation */}
-          <button className="btn-secondary" style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, opacity: messageSending ? 0.6 : 1, cursor: messageSending ? "not-allowed" : "pointer" }} onClick={async () => {
-            if (!user) {
-              alert("🔒 Please log in to message the seller");
-              setPage("login");
-              return;
-            }
-            setMessageSending(true);
-            try {
-              const conversation = await api.createConversation(item.id, seller.id);
-              if (conversation?.id) {
-                alert("✅ Conversation started! Redirecting to Messages...");
-                setPage("messages");
-              }
-            } catch (err) {
-              console.error("Conversation error:", err);
-              alert("⚠️ " + (err.message || "Failed to start conversation"));
-            } finally {
-              setMessageSending(false);
-            }
-          }} disabled={messageSending}>
-            {messageSending ? "⏳ Starting chat..." : "💬 Message Seller"}
-          </button>
+
+          {/* Report Modal */}
+          {showReportModal && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: 20
+            }}>
+              <div style={{
+                background: "white", borderRadius: "var(--radius)", padding: 32, maxWidth: 500, width: "100%",
+                boxShadow: "var(--shadow-lg)", animation: "fadeIn 0.3s ease"
+              }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 900, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  🚩 Report Listing
+                </h2>
+                <p style={{ color: "var(--gray)", marginBottom: 20, fontSize: 14 }}>
+                  Please tell us why you're reporting this listing. This helps us maintain a safe marketplace.
+                </p>
+                <textarea value={reportReason} onChange={(e) => setReportReason(e.target.value)} placeholder="Describe the issue (e.g., inappropriate content, scam, etc.)" style={{
+                  width: "100%", height: 120, padding: 12, border: "2px solid var(--border)", borderRadius: "var(--radius-sm)",
+                  fontFamily: "var(--font-body)", fontSize: 14, resize: "vertical", marginBottom: 20, outline: "none"
+                }} />
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={() => { setShowReportModal(false); setReportReason(""); }} style={{
+                    flex: 1, padding: 12, border: "2px solid var(--border)", borderRadius: 50,
+                    background: "white", color: "var(--gray)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                  }}>
+                    Cancel
+                  </button>
+                  <button onClick={async () => {
+                    if (!reportReason.trim()) {
+                      alert("⚠️ Please provide a reason for reporting");
+                      return;
+                    }
+                    if (!user) {
+                      alert("🔒 Please log in to report listings");
+                      setShowReportModal(false);
+                      setPage("login");
+                      return;
+                    }
+                    setReportSubmitting(true);
+                    try {
+                      const result = await api.createReport({
+                        type: "LISTING",
+                        targetId: item.id,
+                        reason: reportReason.trim()
+                      });
+                      alert("✅ Report submitted successfully! Thank you for helping keep our community safe.");
+                      setShowReportModal(false);
+                      setReportReason("");
+                    } catch (err) {
+                      console.error("Report error:", err);
+                      alert("⚠️ Failed to submit report: " + (err.message || "Unknown error"));
+                    } finally {
+                      setReportSubmitting(false);
+                    }
+                  }} style={{
+                    flex: 1, padding: 12, background: "linear-gradient(135deg, #dc2626, #b91c1c)", color: "white",
+                    border: "none", borderRadius: 50, fontWeight: 600, cursor: reportSubmitting ? "not-allowed" : "pointer",
+                    transition: "all 0.2s", opacity: reportSubmitting ? 0.7 : 1
+                  }} disabled={reportSubmitting}>
+                    {reportSubmitting ? "⏳ Reporting..." : "Submit Report"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Seller */}
           <div style={{ background: "var(--light-gray)", borderRadius: "var(--radius)", padding: 20, display: "flex", alignItems: "center", gap: 16 }}>
@@ -923,7 +1057,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
               <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{seller.name}</div>
               <div style={{ color: "var(--gray)", fontSize: 13 }}>⭐ {seller.rating} · {seller.sales} sales · {seller.location}</div>
             </div>
-            <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => { setSelectedSeller(item.seller); setPage("seller"); }}>View Profile</button>
+            <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => { setSelectedSeller(seller); setPage("seller"); }}>View Profile</button>
           </div>
         </div>
       </div>
@@ -1510,9 +1644,9 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
   );
 }
 
-function SellerPage({ setPage, sellerUsername, language }) {
+function SellerPage({ setPage, sellerData, language }) {
   const t = TRANSLATIONS[language];
-  const seller = { name: sellerUsername || "Seller", avatar: "https://i.pravatar.cc/150?img=1", bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
+  const seller = sellerData || { name: "Seller", avatar: "https://i.pravatar.cc/150?img=1", bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
   const items = [];
 
   return (
@@ -1532,7 +1666,6 @@ function SellerPage({ setPage, sellerUsername, language }) {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" onClick={() => setPage("messages")}>💬 Message</button>
-            <button className="btn-secondary">👤 Follow</button>
           </div>
         </div>
       </div>
@@ -1566,6 +1699,7 @@ function LoginPage({ setPage, language }) {
             name: response.fullName,
             email: response.email,
             avatar: response.imageUrl || `https://i.pravatar.cc/150?u=${response.email}`,
+            role: response.role || "USER",
             rating: 0,
             sales: 0,
             location: "Tunisia",
@@ -1590,6 +1724,7 @@ function LoginPage({ setPage, language }) {
               name: loginResponse.fullName,
               email: loginResponse.email,
               avatar: loginResponse.imageUrl || `https://i.pravatar.cc/150?u=${loginResponse.email}`,
+              role: loginResponse.role || "USER",
               rating: 0,
               sales: 0,
               location: "Tunisia",
@@ -1691,113 +1826,6 @@ function NotificationsPage({ language, setPage }) {
   );
 }
 
-// ─── NEW ARRIVALS PAGE ────────────────────────────────────────────────────────
-function NewArrivalsPage({ setPage, listings }) {
-  const newItems = listings.slice(0, 8); // Show newest items
-  return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
-      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
-      <h1 className="page-header">🆕 New Arrivals</h1>
-      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 24 }}>Check out the latest items just added to SwapTn - discover fresh finds daily!</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 20 }}>
-        {newItems.map((item, i) => (
-          <div key={i} className="card" onClick={() => { setPage("item"); }} style={{ cursor: "pointer", transition: "transform 0.2s", position: "relative" }}>
-            <div style={{ background: "var(--light-gray)", height: 200, borderRadius: 8, marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--gray)", fontSize: 32 }}>👕</div>
-            <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 14 }}>{item.title || "Premium Item"}</div>
-            <div style={{ color: "var(--gray)", fontSize: 12, marginBottom: 8 }}>{item.brand || "Brand"}</div>
-            <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 14 }}>{item.price || "50"} TND</div>
-            <div style={{ position: "absolute", top: 10, right: 10, background: "var(--teal)", color: "white", padding: "4px 8px", borderRadius: 4, fontSize: 12, fontWeight: 600 }}>NEW</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── POPULAR BRANDS PAGE ──────────────────────────────────────────────────────
-function PopularBrandsPage({ setPage }) {
-  const brands = [
-    { name: "Nike", items: 245, icon: "👟" },
-    { name: "Adidas", items: 189, icon: "⚽" },
-    { name: "Zara", items: 312, icon: "👗" },
-    { name: "H&M", items: 203, icon: "👕" },
-    { name: "ASOS", items: 156, icon: "👠" },
-    { name: "Forever 21", items: 134, icon: "💄" },
-    { name: "Urban Outfitters", items: 98, icon: "🎒" },
-    { name: "Levi's", items: 167, icon: "👖" },
-    { name: "Tommy Hilfiger", items: 89, icon: "🧥" },
-    { name: "Calvin Klein", items: 124, icon: "👔" },
-  ];
-
-  return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
-      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
-      <h1 className="page-header">⭐ Popular Brands</h1>
-      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Shop from the most loved brands on SwapTn. All pre-loved, all authentic.</p>
-      
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
-        {brands.map((brand, i) => (
-          <div key={i} className="card" style={{ textAlign: "center", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.1)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"; }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>{brand.icon}</div>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{brand.name}</div>
-            <div style={{ color: "var(--teal)", fontSize: 14, fontWeight: 500 }}>{brand.items} items</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ background: "rgba(0,176,155,0.06)", border: "1px solid var(--teal)", borderRadius: 12, padding: 24, marginTop: 40, textAlign: "center" }}>
-        <p style={{ fontSize: 14, color: "var(--gray)", marginBottom: 16 }}>Can't find your favorite brand?</p>
-        <button onClick={() => setPage("browse")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          Browse All Items →
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── SALES & DEALS PAGE ────────────────────────────────────────────────────────
-function SalesDealsPage({ setPage }) {
-  const deals = [
-    { title: "Spring Sale", discount: "Up to 40% OFF", description: "Refresh your wardrobe with amazing spring collections" },
-    { title: "Weekend Flash Sale", discount: "20-30% OFF", description: "24-hour limited time deals on selected items" },
-    { title: "Bundle Deals", discount: "Buy 2 Get 20% OFF", description: "Mix and match: jackets, shoes, accessories" },
-    { title: "Designer Specials", discount: "Up to 50% OFF", description: "Premium brands at unbeatable prices" },
-  ];
-
-  return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
-      <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
-      <h1 className="page-header">🎉 Sales & Deals</h1>
-      <p style={{ fontSize: 16, color: "var(--gray)", marginBottom: 32 }}>Grab the best bargains on SwapTn. Updated daily with new deals!</p>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, marginBottom: 40 }}>
-        {deals.map((deal, i) => (
-          <div key={i} style={{ background: "linear-gradient(135deg, rgba(0,176,155,0.1) 0%, rgba(0,176,155,0.05) 100%)", border: "2px solid var(--teal)", borderRadius: 12, padding: 24, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -20, right: -20, background: "var(--teal)", width: 100, height: 100, borderRadius: "50%", opacity: 0.1 }} />
-            <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8, color: "var(--teal)" }}>{deal.title}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "var(--teal)", marginBottom: 12 }}>{deal.discount}</div>
-            <div style={{ color: "var(--gray)", fontSize: 14, marginBottom: 16 }}>{deal.description}</div>
-            <button onClick={() => setPage("browse")} style={{ background: "var(--teal)", color: "white", border: "none", padding: "8px 16px", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", width: "100%" }}>
-              Shop Now →
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="card" style={{ background: "rgba(0,176,155,0.06)" }}>
-        <h3 style={{ color: "var(--teal)", marginBottom: 12 }}>💡 Pro Tip: Save More</h3>
-        <ul style={{ lineHeight: 1.8, color: "var(--gray)", fontSize: 14, marginLeft: 20 }}>
-          <li>✓ Follow sellers to get notified when they add new items</li>
-          <li>✓ Add items to Wishlist and watch for price drops</li>
-          <li>✓ Subscribe to our newsletter for exclusive deals</li>
-          <li>✓ Buy multiple items from same seller for negotiated prices</li>
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-// ─── SELLER GUIDE PAGE ────────────────────────────────────────────────────────
 function SellerGuidePage({ setPage }) {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -2663,12 +2691,6 @@ function Footer({ setPage, language }) {
 
   const getPageRoute = (linkName) => {
     const linkMap = {
-      // Discover
-      "New Arrivals": "new-arrivals",
-      "Popular Brands": "popular-brands",
-      "Categories": "browse",
-      "Sales & Deals": "sales-deals",
-      
       // Sell
       "List an Item": "sell",
       "Seller Guide": "seller-guide",
@@ -2699,7 +2721,6 @@ function Footer({ setPage, language }) {
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, lineHeight: 1.7 }}>Tunisia's #1 marketplace for pre-loved fashion. Shop sustainably, sell effortlessly.</p>
           </div>
           {[
-            { title: "Discover", links: ["New Arrivals", "Popular Brands", "Categories", "Sales & Deals"] },
             { title: "Sell", links: ["List an Item", "Seller Guide", "Pricing Tips", "Shipping"] },
             { title: "Support", links: ["Help Center", "Contact Us", "Safe Buying", "Report an Issue"] },
             { title: "Company", links: ["About Us", "Blog", "Careers", "Press"] },
@@ -2745,7 +2766,12 @@ export default function App() {
       if (api.isLoggedIn()) {
         const savedUser = localStorage.getItem('swaptn_user');
         if (savedUser) {
-          setUser(JSON.parse(savedUser));
+          const userData = JSON.parse(savedUser);
+          // Ensure role is present (default to USER for old data)
+          if (!userData.role) {
+            userData.role = "USER";
+          }
+          setUser(userData);
         }
       }
     } catch (err) {
@@ -2765,7 +2791,16 @@ export default function App() {
         setLoading(true);
         setListingError("");
         const data = await api.fetchListings();
-        setListings(Array.isArray(data) ? data : []);
+        // Normalize listing data: map imageUrl to image, and extract owner avatar from database
+        const normalized = Array.isArray(data) ? data.map(item => ({
+          ...item,
+          image: item.image || item.imageUrl,
+          seller: item.owner?.fullName || item.seller || "Seller",
+          sellerAvatar: item.owner?.imageUrl || null,
+          sellerCity: item.owner?.city || item.location || "Tunisia",
+          sellerId: item.owner?.id
+        })) : [];
+        setListings(normalized);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
         setListingError(err.message || "⚠️ Failed to load items. Please refresh the page.");
@@ -2784,7 +2819,9 @@ export default function App() {
     language, setLanguage,
     listings, setListings,
     loading,
-    listingError
+    listingError,
+    setPage,
+    t: TRANSLATIONS[language]
   };
 
   const renderPage = () => {
@@ -2798,15 +2835,10 @@ export default function App() {
       case "wishlist": return <WishlistPage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
       case "messages": return <MessagesPageComponent language={language} setPage={setPage} user={user} TRANSLATIONS={TRANSLATIONS} />;
       case "profile": return <ProfilePage setPage={setPage} setSelectedItem={setSelectedItem} setUser={setUser} language={language} listings={listings} />;
-      case "seller": return <SellerPage setPage={setPage} sellerUsername={selectedSeller} language={language} />;
+      case "seller": return <SellerPage setPage={setPage} sellerData={selectedSeller} language={language} />;
       case "login": return <LoginPage setPage={setPage} language={language} />;
+      case "admin": return <ProtectedAdminRoute><AdminPage /></ProtectedAdminRoute>;
       case "notifications": return <NotificationsPage language={language} setPage={setPage} />;
-      
-      // Discover Section
-      case "new-arrivals": return <NewArrivalsPage setPage={setPage} listings={listings} />;
-      case "popular-brands": return <PopularBrandsPage setPage={setPage} />;
-      case "sales-deals": return <SalesDealsPage setPage={setPage} />;
-      
       // Sell Section
       case "seller-guide": return <SellerGuidePage setPage={setPage} />;
       case "pricing-tips": return <PricingTipsPage setPage={setPage} />;

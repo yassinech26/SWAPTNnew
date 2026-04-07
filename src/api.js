@@ -197,6 +197,23 @@ export async function deleteReview(id) {
   return request(`/api/reviews/${id}`, { method: 'DELETE' });
 }
 
+// ─── REPORTS ──────────────────────────────────────────────────────────────────
+
+export async function createReport(reportData) {
+  return request('/api/reports', {
+    method: 'POST',
+    body: JSON.stringify(reportData),
+  });
+}
+
+export async function getReportsByStatus(status) {
+  return request(`/api/reports/status?status=${status}`);
+}
+
+export async function getReportsByType(type) {
+  return request(`/api/reports/type?type=${type}`);
+}
+
 // ─── JWT DECODE (without library) ─────────────────────────────────────────────
 
 export function decodeToken(token) {

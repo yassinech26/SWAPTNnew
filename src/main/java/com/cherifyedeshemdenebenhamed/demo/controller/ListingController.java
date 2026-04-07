@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Listing;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -26,6 +32,9 @@ public class ListingController {
 
     @Autowired
     private ListingService listingService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<Listing>> getAllListings() {
@@ -47,24 +56,24 @@ public class ListingController {
     }
 
     @PostMapping
-    public ResponseEntity<Listing> createListing(@RequestBody Listing listing) {
-        if (listing.getTitle() == null || listing.getTitle().trim().isEmpty()) {
-            throw new BadRequestException("Please enter an item title (e.g., 'Blue Nike Hoodie')");
+    public ResponseEntity<Listing> createListing(@Valid @RequestBody Listing listing) {
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User authUser = (User) authentication.getPrincipal();
+            // Fetch the user from database to ensure it's properly attached to the session
+            User currentUser = userRepository.findById(authUser.getId())
+                    .orElseThrow(() -> new BadRequestException("User not found"));
+            listing.setOwner(currentUser);
+        } else {
+            throw new BadRequestException("Authentication required to create a listing");
         }
-        if (listing.getPrice() == null || listing.getPrice() < 0) {
-            throw new BadRequestException("Price must be greater than 0 TND. Enter a valid price.");
-        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(listingService.saveListing(listing));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
-        if (id == null || id <= 0) {
-            throw new BadRequestException("Invalid item ID. Cannot update this item.");
-        }
-        if (listingDetails.getTitle() == null || listingDetails.getTitle().trim().isEmpty()) {
-            throw new BadRequestException("Please enter an item title");
-        }
+    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @Valid @RequestBody Listing listingDetails) {
         Listing existingListing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("This item no longer exists or was removed."));
 

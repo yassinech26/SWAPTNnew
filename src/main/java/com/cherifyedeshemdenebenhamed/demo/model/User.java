@@ -1,16 +1,25 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(
@@ -75,6 +84,16 @@ public class User implements UserDetails {
     @Column(name = "rating")
     private Double rating = 0.0;
 
+    public enum Role {
+        ADMIN,
+        USER,
+        MODERATOR
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true, length = 20)
+    private Role role = Role.USER;
+
     public Double getRating() { return rating; }
     public void setRating(Double rating) { this.rating = rating; }
 
@@ -100,7 +119,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.toString()));
     }
 
     @Override
@@ -128,4 +147,7 @@ public class User implements UserDetails {
 
     public String getGoogleId() { return googleId; }
     public void setGoogleId(String googleId) { this.googleId = googleId; }
+
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }
