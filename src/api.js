@@ -110,6 +110,63 @@ export async function updateProfile(id, data) {
   });
 }
 
+// ─── ADMIN USERS ─────────────────────────────────────────────────────────────
+
+export async function fetchAdminUsers() {
+  return request('/admin/users');
+}
+
+export async function updateAdminUserRole(id, role) {
+  return request(`/admin/users/${id}/role`, {
+    method: 'PUT',
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function banAdminUser(id) {
+  return request(`/admin/users/${id}/ban`, {
+    method: 'POST',
+  });
+}
+
+export async function unbanAdminUser(id) {
+  return request(`/admin/users/${id}/unban`, {
+    method: 'POST',
+  });
+}
+
+export async function deleteAdminUser(id) {
+  return request(`/admin/users/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function fetchAdminReports() {
+  return request('/admin/reports');
+}
+
+export async function fetchAdminListings() {
+  return request('/admin/listings');
+}
+
+export async function deleteAdminReport(id) {
+  return request(`/admin/reports/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function updateAdminReportStatus(id, status) {
+  return request(`/admin/reports/${id}/status?status=${encodeURIComponent(status)}`, {
+    method: 'PATCH',
+  });
+}
+
+export async function deactivateAdminListing(id) {
+  return request(`/admin/listings/${id}/deactivate`, {
+    method: 'PATCH',
+  });
+}
+
 // ─── LISTINGS ─────────────────────────────────────────────────────────────────
 
 export async function fetchListings() {

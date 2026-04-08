@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,7 +51,7 @@ public class ListingController {
         if (id == null || id <= 0) {
             throw new BadRequestException(" Invalid item ID. Please check the link and try again.");
         }
-        Listing listing = listingService.getListingById(id)
+        Listing listing = listingService.getActiveListingById(id)
                 .orElseThrow(() -> new NotFoundException(" This item is no longer available. It may have been sold or removed."));
         return ResponseEntity.ok(listing);
     }
@@ -61,8 +62,12 @@ public class ListingController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User) {
             User authUser = (User) authentication.getPrincipal();
+            Long authUserId = authUser.getId();
+            if (authUserId == null) {
+                throw new BadRequestException("Invalid authenticated user context");
+            }
             // Fetch the user from database to ensure it's properly attached to the session
-            User currentUser = userRepository.findById(authUser.getId())
+            User currentUser = userRepository.findById(authUserId)
                     .orElseThrow(() -> new BadRequestException("User not found"));
             listing.setOwner(currentUser);
         } else {
@@ -73,7 +78,7 @@ public class ListingController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @Valid @RequestBody Listing listingDetails) {
+    public ResponseEntity<Listing> updateListing(@PathVariable @NonNull Long id, @Valid @RequestBody Listing listingDetails) {
         Listing existingListing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("This item no longer exists or was removed."));
 

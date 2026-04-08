@@ -1,5 +1,14 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+
 import com.cherifyedeshemdenebenhamed.demo.dto.ReportDTO;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Report;
@@ -7,30 +16,28 @@ import com.cherifyedeshemdenebenhamed.demo.model.ReportStatus;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
-import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
 
     private final ReportRepository reportRepository;
-    private final UserRepository userRepository;
 
     @Autowired
-    public ReportService(ReportRepository reportRepository, UserRepository userRepository) {
+    public ReportService(ReportRepository reportRepository) {
         this.reportRepository = reportRepository;
-        this.userRepository = userRepository;
     }
 
+    @SuppressWarnings("null")
     public ReportDTO createReport(Report report) {
-       
-        Report savedReport = reportRepository.save(report);
+        Report savedReport = Objects.requireNonNull(reportRepository.save(report));
         return mapToDTO(savedReport);
+    }
+
+    public List<ReportDTO> getAllReports() {
+        return reportRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     public List<ReportDTO> getReportsByUser(User user) {
@@ -40,7 +47,7 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<ReportDTO> getReportById(Long id) {
+    public Optional<ReportDTO> getReportById(@NonNull Long id) {
         return reportRepository.findById(id).map(this::mapToDTO);
     }
 
@@ -72,14 +79,21 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    public ReportDTO updateReportStatus(Long id, ReportStatus status) {
+    public ReportDTO updateReportStatus(@NonNull Long id, ReportStatus status) {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Signalement introuvable"));
 
         report.setStatus(status);
-        Report updatedReport = reportRepository.save(report);
+        Report updatedReport = Objects.requireNonNull(reportRepository.save(report));
 
         return mapToDTO(updatedReport);
+    }
+
+    public void deleteReportById(@NonNull Long id) {
+        if (!reportRepository.existsById(id)) {
+            throw new NotFoundException("Signalement introuvable");
+        }
+        reportRepository.deleteById(id);
     }
 
     private ReportDTO mapToDTO(Report report) {

@@ -24,6 +24,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path,
       },
+      '/admin': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
+      },
     },
   },
 })

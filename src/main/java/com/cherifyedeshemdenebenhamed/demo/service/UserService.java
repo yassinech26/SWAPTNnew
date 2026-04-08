@@ -1,13 +1,16 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.cherifyedeshemdenebenhamed.demo.configuration.JwtService;
@@ -18,8 +21,14 @@ import com.cherifyedeshemdenebenhamed.demo.dto.RegisterResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.UpdateUserRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.UserResponse;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
+import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
+import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
 import com.cherifyedeshemdenebenhamed.demo.model.Review;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.ListingRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
 
@@ -28,13 +37,30 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    private final ListingRepository listingRepository;
+    private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
+    private final ReportRepository reportRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     @Autowired
-    public UserService(UserRepository userRepository, ReviewRepository reviewRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UserService(
+            UserRepository userRepository,
+            ReviewRepository reviewRepository,
+            ListingRepository listingRepository,
+            ConversationRepository conversationRepository,
+            MessageRepository messageRepository,
+            ReportRepository reportRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService
+    ) {
         this.userRepository = userRepository;
         this.reviewRepository = reviewRepository;
+        this.listingRepository = listingRepository;
+        this.conversationRepository = conversationRepository;
+        this.messageRepository = messageRepository;
+        this.reportRepository = reportRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -66,9 +92,10 @@ public class UserService {
     }
 
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    public @NonNull User getUserById(@NonNull Long id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return Objects.requireNonNull(user);
     }
     // This method retrieves the currently authenticated user from the Spring Security context. It checks if the authentication object and its principal are present, and if so, it casts the principal to a User object and returns it. If the user is not authenticated, it throws an UNAUTHORIZED exception.
     private User getCurrentAuthenticatedUser() {
@@ -81,7 +108,8 @@ public class UserService {
         return (User) authentication.getPrincipal();
     }
 
-    public UserResponse updateProfile(Long id, UpdateUserRequest request) {
+    @SuppressWarnings("null")
+    public UserResponse updateProfile(@NonNull Long id, UpdateUserRequest request) {
         User currentUser = getCurrentAuthenticatedUser();
 
         if (!currentUser.getId().equals(id)) {
@@ -107,7 +135,7 @@ public class UserService {
             user.setImageUrl(request.getImageUrl());
         }
 
-        User savedUser = userRepository.save(user);
+        User savedUser = Objects.requireNonNull(saveUser(user));
 
         return new UserResponse(
                 savedUser.getId(),
@@ -119,7 +147,7 @@ public class UserService {
         );
     }
 
-    public void recalculateMoyenne(Long userId) {
+    public void recalculateMoyenne(@NonNull Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
@@ -148,7 +176,7 @@ public class UserService {
     /**
      * Save a user (used for role/status changes)
      */
-    public User saveUser(User user) {
+    public @NonNull User saveUser(@NonNull User user) {
         return userRepository.save(user);
     }
 
@@ -175,5 +203,31 @@ public class UserService {
         return userRepository.findAll().stream()
                 .filter(u -> u.getRole() == User.Role.ADMIN)
                 .count();
+    }
+
+    /**
+     * Delete a user and related records (Admin only workflow)
+     */
+    @Transactional
+    public void deleteUserByAdmin(@NonNull Long userId) {
+        User user = getUserById(userId);
+
+        List<Long> conversationIds = conversationRepository
+                .findByUser1_IdOrUser2_Id(userId, userId)
+                .stream()
+                .map(Conversation::getId)
+                .toList();
+
+        if (!conversationIds.isEmpty()) {
+            messageRepository.deleteByConversation_IdIn(conversationIds);
+        }
+
+        messageRepository.deleteBySender_Id(userId);
+        conversationRepository.deleteByUser1_IdOrUser2_Id(userId, userId);
+        reviewRepository.deleteByReviewer_IdOrReviewedUser_Id(userId, userId);
+        reportRepository.deleteByReportedBy_Id(userId);
+        reportRepository.deleteByTypeAndTargetId(ReportType.USER, userId);
+        listingRepository.deleteByOwner_Id(userId);
+        userRepository.delete(user);
     }
 }

@@ -73,7 +73,9 @@ public class Listing {
     private User owner;
 
     public enum ListingStatus {
-        ACTIVE, SOLD
+        ACTIVE,
+        INACTIVE,
+        SOLD
     }
 
     // Getters and Setters

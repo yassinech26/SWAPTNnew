@@ -28,6 +28,9 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
   const [messages, setMessages] = useState({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -93,6 +96,27 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
     }
   };
 
+  const reportConversation = async () => {
+    if (!activeChat?.id) return;
+
+    setReportSubmitting(true);
+    try {
+      await api.createReport({
+        type: "CONVERSATION",
+        targetId: activeChat.id,
+        reason: reportReason.trim()
+      });
+      alert("Conversation report submitted.");
+      setShowReportModal(false);
+      setReportReason("");
+    } catch (err) {
+      console.error("Conversation report error:", err);
+      alert(err.message || "Request failed");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
       <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
@@ -139,6 +163,24 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
                     <div style={{ fontWeight: 700 }}>{activeChat.otherUser?.fullName || "User"}</div>
                     <div style={{ fontSize: 12, color: "var(--teal-dark)" }}>{activeChat.listingName || `Listing #${activeChat.listingId}`}</div>
                   </div>
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    disabled={reportSubmitting}
+                    style={{
+                      marginLeft: "auto",
+                      background: "white",
+                      color: "#dc2626",
+                      border: "1px solid #fecaca",
+                      borderRadius: 999,
+                      padding: "8px 14px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: reportSubmitting ? "not-allowed" : "pointer",
+                      opacity: reportSubmitting ? 0.7 : 1
+                    }}
+                  >
+                    🚩 Report Conversation
+                  </button>
                 </div>
                 <div style={{ 
                   flex: 1, 
@@ -173,6 +215,90 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
                   <input className="input-field" style={{ flex: 1, borderRadius: 50 }} placeholder="Type a message..." value={msgInput} onChange={e => setMsgInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} disabled={sending} />
                   <button className="btn-primary" style={{ padding: "10px 20px", opacity: sending ? 0.6 : 1 }} onClick={sendMsg} disabled={sending}>{sending ? "Sending..." : "Send"}</button>
                 </div>
+
+                {showReportModal && (
+                  <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: "rgba(0,0,0,0.5)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10000,
+                    padding: 20
+                  }}>
+                    <div style={{
+                      background: "white",
+                      borderRadius: 16,
+                      padding: 24,
+                      maxWidth: 480,
+                      width: "100%",
+                      boxShadow: "0 12px 48px rgba(0,0,0,0.15)"
+                    }}>
+                      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>🚩 Report Conversation</h2>
+                      <p style={{ color: "var(--gray)", marginBottom: 14, fontSize: 14 }}>
+                        Explain why this conversation should be reviewed.
+                      </p>
+
+                      <textarea
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        placeholder="Describe the issue..."
+                        style={{
+                          width: "100%",
+                          minHeight: 110,
+                          border: "2px solid var(--border)",
+                          borderRadius: 8,
+                          padding: 12,
+                          resize: "vertical",
+                          fontFamily: "inherit",
+                          fontSize: 14,
+                          marginBottom: 14
+                        }}
+                      />
+
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <button
+                          onClick={() => {
+                            setShowReportModal(false);
+                            setReportReason("");
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: 11,
+                            border: "1px solid var(--border)",
+                            borderRadius: 999,
+                            background: "white",
+                            color: "var(--gray)",
+                            fontWeight: 600
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={reportConversation}
+                          disabled={reportSubmitting}
+                          style={{
+                            flex: 1,
+                            padding: 11,
+                            border: "none",
+                            borderRadius: 999,
+                            background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+                            color: "white",
+                            fontWeight: 700,
+                            opacity: reportSubmitting ? 0.7 : 1,
+                            cursor: reportSubmitting ? "not-allowed" : "pointer"
+                          }}
+                        >
+                          {reportSubmitting ? "Reporting..." : "Submit Report"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--gray)" }}>Select a conversation</div>
