@@ -19,6 +19,47 @@ const formatTime = (dateString) => {
   }
 };
 
+function Avatar({ src, size = 40, alt = "Avatar", style = {} }) {
+  const [hasError, setHasError] = useState(false);
+  const normalizedSrc = typeof src === "string" ? src.trim() : "";
+  const hasImage = normalizedSrc !== "" && !hasError;
+  const numericSize = typeof size === "number" ? size : parseInt(size, 10) || 40;
+  const baseStyle = {
+    width: numericSize,
+    height: numericSize,
+    borderRadius: "50%",
+    flexShrink: 0,
+    ...style
+  };
+
+  if (hasImage) {
+    return (
+      <img
+        src={normalizedSrc}
+        alt={alt}
+        style={{ ...baseStyle, objectFit: "cover" }}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div style={{
+      ...baseStyle,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "var(--light-gray)",
+      color: "var(--gray)",
+      fontSize: Math.max(12, Math.round(numericSize * 0.42)),
+      fontWeight: 700,
+      border: style.border || "1px solid var(--border)"
+    }}>
+      <span style={{ lineHeight: 1 }}>👤</span>
+    </div>
+  );
+}
+
 
 export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
   const t = TRANSLATIONS[language];
@@ -144,7 +185,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
               const otherUserName = conv.otherUser?.fullName || conv.otherUser?.name || `User #${conv.user2Id}` || "User";
               return (
               <div key={conv.id} onClick={() => { setActiveChat(conv); }} style={{ display: "flex", gap: 12, padding: 16, cursor: "pointer", borderBottom: "1px solid var(--border)", background: activeChat?.id === conv.id ? "var(--teal-light)" : "white", transition: "background 0.2s" }}>
-                <img src={conv.otherUser?.imageUrl || "https://i.pravatar.cc/150?img=1"} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} alt="" />
+                <Avatar src={conv.otherUser?.imageUrl} size={44} alt={`${otherUserName} avatar`} />
                 <div style={{ flex: 1, overflow: "hidden" }}>
                   <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{otherUserName}</div>
                   <div style={{ fontSize: 13, color: "var(--gray)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>💬 Chat</div>
@@ -158,7 +199,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS }) {
             {activeChat ? (
               <>
                 <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 12, background: "var(--teal-light)", flexShrink: 0 }}>
-                  <img src={activeChat.otherUser?.imageUrl || "https://i.pravatar.cc/150?img=1"} style={{ width: 40, height: 40, borderRadius: "50%" }} alt="" />
+                  <Avatar src={activeChat.otherUser?.imageUrl} size={40} alt="Chat user avatar" />
                   <div>
                     <div style={{ fontWeight: 700 }}>{activeChat.otherUser?.fullName || "User"}</div>
                     <div style={{ fontSize: 12, color: "var(--teal-dark)" }}>{activeChat.listingName || `Listing #${activeChat.listingId}`}</div>

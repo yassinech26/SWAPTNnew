@@ -392,7 +392,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
           )}
           {user
             ? <div onClick={() => setPage("profile")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 50, border: "1px solid var(--border)", background: "rgba(255,255,255,0.85)", transition: "all 0.2s" }}>
-                <img src={user.avatar} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} alt="" />
+                <Avatar src={user.avatar} size={28} alt="User avatar" />
                 <span style={{ fontSize: 14, fontWeight: 500 }}>{user.name.split(" ")[0]}</span>
               </div>
             : <button className="btn-primary" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => setPage("login")}>{t.login}</button>
@@ -452,6 +452,47 @@ function NavBtn({ icon, label, highlight, badge, onClick }) {
         }}>{label}</span>
       )}
     </button>
+  );
+}
+
+function Avatar({ src, size = 40, alt = "Avatar", style = {} }) {
+  const [hasError, setHasError] = useState(false);
+  const normalizedSrc = typeof src === "string" ? src.trim() : "";
+  const hasImage = normalizedSrc !== "" && !hasError;
+  const numericSize = typeof size === "number" ? size : parseInt(size, 10) || 40;
+  const baseStyle = {
+    width: numericSize,
+    height: numericSize,
+    borderRadius: "50%",
+    flexShrink: 0,
+    ...style
+  };
+
+  if (hasImage) {
+    return (
+      <img
+        src={normalizedSrc}
+        alt={alt}
+        style={{ ...baseStyle, objectFit: "cover" }}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div style={{
+      ...baseStyle,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "var(--light-gray)",
+      color: "var(--gray)",
+      fontSize: Math.max(12, Math.round(numericSize * 0.42)),
+      fontWeight: 700,
+      border: style.border || "1px solid var(--border)"
+    }}>
+      <span style={{ lineHeight: 1 }}>👤</span>
+    </div>
   );
 }
 
@@ -850,7 +891,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const seller = { 
     name: item?.seller || sellerObj?.fullName || "Seller", 
     id: item?.sellerId || sellerObj?.id,
-    avatar: item?.sellerAvatar || sellerObj?.imageUrl || "https://i.pravatar.cc/150?img=1", 
+    avatar: item?.sellerAvatar || sellerObj?.imageUrl || null,
     rating: 4.5, 
     sales: 10, 
     location: item?.sellerCity || sellerObj?.city || item?.location || "Tunisia" 
@@ -1007,7 +1048,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
 
           {/* Seller */}
           <div style={{ background: "var(--light-gray)", borderRadius: "var(--radius)", padding: 20, display: "flex", alignItems: "center", gap: 16 }}>
-            <img src={seller.avatar} style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover" }} alt="" />
+            <Avatar src={seller.avatar} size={56} alt={`${seller.name} avatar`} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{seller.name}</div>
               <div style={{ color: "var(--gray)", fontSize: 13 }}>⭐ {seller.rating} · {seller.sales} sales · {seller.location}</div>
@@ -1270,7 +1311,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
   const [editLoading, setEditLoading] = useState(false);
   // ✅ FIXED: Filter listings to only show current user's listings
   const userItems = user && user.id ? listings.filter(l => l.owner?.id === user.id || l.seller?.id === user.id) : [];
-  const u = user || { name: "User", avatar: "https://i.pravatar.cc/150?img=1", rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
+  const u = user || { name: "User", avatar: null, rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
 
   const handleEditProfile = async () => {
     setEditError("");
@@ -1307,7 +1348,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
       <div className="card" style={{ padding: 40, marginBottom: 32 }}>
         <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ position: "relative" }}>
-            <img src={u.avatar} style={{ width: 100, height: 100, borderRadius: "50%", objectFit: "cover", border: "4px solid var(--teal)" }} alt="" />
+            <Avatar src={u.avatar} size={100} alt={`${u.name} avatar`} style={{ border: "4px solid var(--teal)" }} />
             <div style={{ position: "absolute", bottom: 0, right: 0, background: "var(--teal)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
               <span style={{ color: "white", fontSize: 12 }}>✏️</span>
             </div>
@@ -1371,10 +1412,10 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
       )}
       {tab === "reviews" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease" }}>
-          {[{ user: "mouldi_h", avatar: "https://i.pravatar.cc/150?img=13", rating: 5, text: "Amazing seller! Item was exactly as described. Fast shipping too! 🌟", item: "Zara Floral Dress" }, { user: "ahmed_k", avatar: "https://i.pravatar.cc/150?img=12", rating: 5, text: "Very fast and professional. Would buy again!", item: "H&M Hoodie" }].map((r, i) => (
+          {[{ user: "mouldi_h", avatar: null, rating: 5, text: "Amazing seller! Item was exactly as described. Fast shipping too! 🌟", item: "Zara Floral Dress" }, { user: "ahmed_k", avatar: null, rating: 5, text: "Very fast and professional. Would buy again!", item: "H&M Hoodie" }].map((r, i) => (
             <div key={i} className="card" style={{ padding: 20 }}>
               <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                <img src={r.avatar} style={{ width: 44, height: 44, borderRadius: "50%" }} alt="" />
+                <Avatar src={r.avatar} size={44} alt={`${r.user} avatar`} />
                 <div>
                   <div style={{ fontWeight: 700 }}>{r.user}</div>
                   <div style={{ color: "var(--gold)" }}>{"⭐".repeat(r.rating)}</div>
@@ -1435,7 +1476,7 @@ function SellerPage({ setPage, sellerData, language }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
-  const seller = sellerData || { name: "Seller", avatar: "https://i.pravatar.cc/150?img=1", bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
+  const seller = sellerData || { name: "Seller", avatar: null, bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
   const items = [];
   const canReportSeller = Boolean(seller?.id) && (!user || Number(user.id) !== Number(seller.id));
 
@@ -1444,7 +1485,7 @@ function SellerPage({ setPage, sellerData, language }) {
       <button onClick={() => setPage("item")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24 }}>← Back</button>
       <div className="card" style={{ padding: 40, marginBottom: 32, background: "linear-gradient(135deg, var(--teal-light), white)" }}>
         <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
-          <img src={seller.avatar} style={{ width: 90, height: 90, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--teal)" }} alt="" />
+          <Avatar src={seller.avatar} size={90} alt={`${seller.name} avatar`} style={{ border: "3px solid var(--teal)" }} />
           <div style={{ flex: 1 }}>
             <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900 }}>{seller.name}</h1>
             <p style={{ color: "var(--gray)", margin: "6px 0 12px" }}>{seller.bio}</p>
@@ -1603,7 +1644,7 @@ function LoginPage({ setPage, language }) {
             id: response.id,
             name: response.fullName,
             email: response.email,
-            avatar: response.imageUrl || `https://i.pravatar.cc/150?u=${response.email}`,
+            avatar: response.imageUrl || "",
             role: response.role || "USER",
             rating: 0,
             sales: 0,
@@ -1629,7 +1670,7 @@ function LoginPage({ setPage, language }) {
               id: loginResponse.id,
               name: loginResponse.fullName,
               email: loginResponse.email,
-              avatar: loginResponse.imageUrl || `https://i.pravatar.cc/150?u=${loginResponse.email}`,
+              avatar: loginResponse.imageUrl || "",
               role: loginResponse.role || "USER",
               rating: 0,
               sales: 0,
