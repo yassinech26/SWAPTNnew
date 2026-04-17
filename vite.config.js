@@ -30,6 +30,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path,
       },
+      '/uploads': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
+      },
     },
   },
 })

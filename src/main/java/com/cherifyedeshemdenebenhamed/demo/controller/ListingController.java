@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
@@ -16,13 +17,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Listing;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
+import com.cherifyedeshemdenebenhamed.demo.service.ListingImageStorageService;
 import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
 
 import jakarta.validation.Valid;
@@ -33,6 +37,9 @@ public class ListingController {
 
     @Autowired
     private ListingService listingService;
+
+    @Autowired
+    private ListingImageStorageService listingImageStorageService;
 
     @Autowired
     private UserRepository userRepository;
@@ -56,8 +63,14 @@ public class ListingController {
         return ResponseEntity.ok(listing);
     }
 
-    @PostMapping
-    public ResponseEntity<Listing> createListing(@Valid @RequestBody Listing listing) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Listing> createListing(
+            @Valid @RequestPart("listing") Listing listing,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+
+        if (images == null || images.isEmpty()) {
+            throw new BadRequestException("Please upload at least one image.");
+        }
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User) {
@@ -73,6 +86,10 @@ public class ListingController {
         } else {
             throw new BadRequestException("Authentication required to create a listing");
         }
+
+        List<String> storedImageUrls = listingImageStorageService.storeListingImages(images);
+        listing.setImageUrls(storedImageUrls);
+        listing.setImageUrl(storedImageUrls.get(0));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(listingService.saveListing(listing));
     }

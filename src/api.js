@@ -21,9 +21,12 @@ export function clearToken() {
   localStorage.removeItem('swaptn_token');
 }
 
-function authHeaders() {
+function authHeaders(body) {
   const token = getToken();
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {};
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 }
@@ -41,7 +44,7 @@ async function request(url, options = {}) {
   // Always use relative URL - Vite proxy handles routing in dev, production proxies handle prod
   const res = await fetch(url, {
     ...options,
-    headers: { ...authHeaders(), ...options.headers },
+    headers: { ...authHeaders(options.body), ...options.headers },
   });
   
   console.log(`[API] ${options.method || 'GET'} ${url} -> ${res.status}`);
@@ -177,10 +180,14 @@ export async function fetchListingById(id) {
   return request(`/api/listings/${id}`);
 }
 
-export async function createListing(listingData) {
+export async function createListing(listingData, imageFiles = []) {
+  const formData = new FormData();
+  formData.append('listing', new Blob([JSON.stringify(listingData)], { type: 'application/json' }));
+  imageFiles.forEach((file) => formData.append('images', file));
+
   return request('/api/listings', {
     method: 'POST',
-    body: JSON.stringify(listingData),
+    body: formData,
   });
 }
 

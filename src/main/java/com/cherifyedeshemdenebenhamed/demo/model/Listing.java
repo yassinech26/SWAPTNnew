@@ -1,13 +1,18 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -61,6 +66,11 @@ public class Listing {
     @Size(max = 500)
     @Column(name = "image_url", length = 500)
     private String imageUrl;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "listing_images", joinColumns = @JoinColumn(name = "listing_id"))
+    @Column(name = "image_url", length = 500)
+    private List<String> imageUrls = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private ListingStatus status = ListingStatus.ACTIVE;
@@ -165,6 +175,14 @@ public class Listing {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = (imageUrls == null) ? new ArrayList<>() : imageUrls;
     }
 
     public LocalDateTime getCreatedAt() {

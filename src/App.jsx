@@ -73,6 +73,21 @@ const TRANSLATIONS = {
   ar: EN_TRANSLATIONS,
 };
 
+function normalizeListingForUi(item) {
+  const imageList = Array.isArray(item?.imageUrls) ? item.imageUrls.filter(Boolean) : [];
+  const primaryImage = item?.image || item?.imageUrl || imageList[0] || "";
+
+  return {
+    ...item,
+    image: primaryImage,
+    imageUrls: imageList.length > 0 ? imageList : (primaryImage ? [primaryImage] : []),
+    seller: item?.owner?.fullName || item?.seller || "Seller",
+    sellerAvatar: item?.owner?.imageUrl || null,
+    sellerCity: item?.owner?.city || item?.location || "Tunisia",
+    sellerId: item?.owner?.id
+  };
+}
+
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 const globalStyle = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
@@ -929,15 +944,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
       setSearchError("");
       try {
         const results = await api.searchListings(searchVal);
-        // Normalize search results to include avatar from database
-        const normalized = Array.isArray(results) ? results.map(item => ({
-          ...item,
-          image: item.image || item.imageUrl,
-          seller: item.owner?.fullName || item.seller || "Seller",
-          sellerAvatar: item.owner?.imageUrl || null,
-          sellerCity: item.owner?.city || item.location || "Tunisia",
-          sellerId: item.owner?.id
-        })) : [];
+        const normalized = Array.isArray(results) ? results.map(normalizeListingForUi) : [];
         setSearchResults(normalized);
       } catch (err) {
         setSearchError(err.message || "Failed to search. Please try again.");
@@ -1123,7 +1130,10 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
     console.log("Item data:", { item, sellerObj, seller, avatar: seller.avatar });
   }, [item]);
   
-  const imgs = [item?.image].filter(Boolean);
+  const imgs = (Array.isArray(item?.imageUrls) && item.imageUrls.length > 0
+    ? item.imageUrls
+    : [item?.image].filter(Boolean));
+  const galleryImages = imgs.length > 0 ? imgs : ["https://via.placeholder.com/800x800?text=No+Image"];
 
   const requireLogin = (actionText = "continue") => {
     if (user) return true;
@@ -1160,10 +1170,10 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
         {/* Images */}
         <div>
           <div style={{ borderRadius: "var(--radius)", overflow: "hidden", aspectRatio: "1", marginBottom: 12 }}>
-            <img src={imgs[activeImg]} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+            <img src={galleryImages[activeImg]} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            {imgs.map((img, i) => (
+            {galleryImages.map((img, i) => (
               <div key={i} onClick={() => setActiveImg(i)} style={{
                 width: 80, height: 80, borderRadius: "var(--radius-sm)", overflow: "hidden",
                 border: `2px solid ${activeImg === i ? "var(--teal)" : "transparent"}`,
@@ -1312,20 +1322,77 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
 }
 
 function SellPage({ setPage, language }) {
-  const { user, setListings } = useApp();
+  const { setListings } = useApp();
+  const MAX_LISTING_IMAGES = 10;
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ title: "", category: "", brand: "", size: "", condition: "", price: "", description: "", imageUrl: "", location: "" });
+  const [form, setForm] = useState({ title: "", category: "", brand: "", size: "", condition: "", price: "", description: "", location: "" });
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const t = TRANSLATIONS[language];
+
+  useEffect(() => {
+    const previews = selectedImages.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file)
+    }));
+
+    setImagePreviews(previews);
+
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    };
+  }, [selectedImages]);
 
   const update = (k, v) => {
     setForm(f => ({ ...f, [k]: v }));
     if (fieldErrors[k]) setFieldErrors(errs => ({ ...errs, [k]: undefined }));
   };
 
+  const handleImageSelection = (event) => {
+    const files = Array.from(event.target.files || []);
+    const imageFiles = files.filter((file) => file.type?.startsWith("image/"));
+
+    if (imageFiles.length === 0) {
+      setSelectedImages([]);
+      setFieldErrors((errs) => ({ ...errs, images: "Please choose at least one image file." }));
+      return;
+    }
+
+    if (imageFiles.length > MAX_LISTING_IMAGES) {
+      setError(`You can upload up to ${MAX_LISTING_IMAGES} images.`);
+    } else {
+      setError("");
+    }
+
+    setSelectedImages(imageFiles.slice(0, MAX_LISTING_IMAGES));
+    if (fieldErrors.images) {
+      setFieldErrors((errs) => ({ ...errs, images: undefined }));
+    }
+  };
+
+  const removeSelectedImage = (indexToRemove) => {
+    setSelectedImages((prev) => {
+      const next = prev.filter((_, index) => index !== indexToRemove);
+      if (next.length === 0) {
+        setFieldErrors((errs) => ({ ...errs, images: "Please add at least one photo." }));
+      }
+      return next;
+    });
+  };
+
   const handleNextStep = () => {
+    if (step === 1) {
+      const errors = {};
+      if (selectedImages.length === 0) errors.images = "Please add at least one photo.";
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+    }
+
     if (step === 2) {
       const errors = {};
       if (!form.title?.trim()) errors.title = "Title is required";
@@ -1345,16 +1412,22 @@ function SellPage({ setPage, language }) {
         return;
       }
     }
-    
+
     setFieldErrors({});
     setStep(s => s + 1);
   };
 
   const handlePublish = async () => {
     setError("");
+
+    if (selectedImages.length === 0) {
+      setError("Please add at least one photo before publishing.");
+      setStep(1);
+      return;
+    }
+
     setLoading(true);
     try {
-      // For now, store the first image URL if available, or use a placeholder
       const listingData = {
         title: form.title,
         description: form.description,
@@ -1364,17 +1437,15 @@ function SellPage({ setPage, language }) {
         size: form.size || "N/A",
         condition: form.condition || "New",
         location: form.location || "Tunis",
-        imageUrl: form.imageUrl || "https://via.placeholder.com/500x500?text=" + encodeURIComponent(form.title || "Item"),
         status: "ACTIVE"
       };
 
-      const result = await api.createListing(listingData);
-      
+      const result = await api.createListing(listingData, selectedImages);
+
       if (result?.id) {
-        // Refresh listings
         const allListings = await api.fetchListings();
-        setListings(Array.isArray(allListings) ? allListings : []);
-        
+        setListings(Array.isArray(allListings) ? allListings.map(normalizeListingForUi) : []);
+
         alert("✅ Listing published successfully!");
         setPage("profile");
       }
@@ -1416,19 +1487,49 @@ function SellPage({ setPage, language }) {
           <div style={{ animation: "slideIn 0.3s ease" }}>
             <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Add Photos</h2>
             <div style={{ border: "2px dashed var(--border)", borderRadius: "var(--radius)", padding: "24px", textAlign: "center", background: "var(--light-gray)" }}>
-              <label htmlFor="sell-image-url" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 8 }}>📸 Image URL</label>
-              <input 
-                id="sell-image-url"
+              <label htmlFor="sell-images" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 8 }}>📸 Upload photos from your device</label>
+              <input
+                id="sell-images"
                 className="input-field"
-                type="url"
-                placeholder="Paste image URL (e.g., https://images.unsplash.com/...)"
-                value={form.imageUrl}
-                onChange={e => update("imageUrl", e.target.value)}
-                style={{ marginBottom: 8 }}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageSelection}
               />
-              {form.imageUrl && (
-                <div style={{ marginTop: 16 }}>
-                  <img src={form.imageUrl} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="Image" onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Invalid+URL"; }} />
+              <div style={{ marginTop: 10, fontSize: 12, color: "var(--gray)" }}>
+                Up to {MAX_LISTING_IMAGES} photos. JPG, PNG, WEBP, and GIF are supported.
+              </div>
+
+              {fieldErrors.images && <div style={{ color: "var(--coral)", fontSize: 12, marginTop: 10 }}>{fieldErrors.images}</div>}
+
+              {imagePreviews.length > 0 && (
+                <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
+                  {imagePreviews.map((preview, index) => (
+                    <div key={`${preview.url}-${index}`} style={{ position: "relative", borderRadius: "var(--radius-sm)", overflow: "hidden", border: "1px solid var(--border)", background: "white" }}>
+                      <img src={preview.url} alt={`Selected ${index + 1}`} style={{ width: "100%", height: 96, objectFit: "cover", display: "block" }} />
+                      <button
+                        type="button"
+                        onClick={() => removeSelectedImage(index)}
+                        style={{
+                          position: "absolute",
+                          top: 6,
+                          right: 6,
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          border: "none",
+                          background: "rgba(0,0,0,0.65)",
+                          color: "white",
+                          fontSize: 14,
+                          lineHeight: "22px",
+                          cursor: "pointer"
+                        }}
+                        aria-label="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1458,7 +1559,7 @@ function SellPage({ setPage, language }) {
               ))}
               <div>
                 <label htmlFor="sell-description" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Description</label>
-                <textarea id="sell-description" className="input-field" rows={4} placeholder="Describe any details, measurements, or flaws…" value={form.description} onChange={e => update("description", e.target.value)} style={{ resize: "vertical" }} />
+                <textarea id="sell-description" className="input-field" rows={4} placeholder="Describe any details, measurements, or flaws..." value={form.description} onChange={e => update("description", e.target.value)} style={{ resize: "vertical" }} />
                 {fieldErrors.description && <div style={{ color: "var(--coral)", fontSize: 12, marginTop: 4 }}>{fieldErrors.description}</div>}
               </div>
             </div>
@@ -1472,10 +1573,10 @@ function SellPage({ setPage, language }) {
               <span style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", fontSize: 18, fontWeight: 700, color: "var(--gray)" }}>TND</span>
             </div>
             {fieldErrors.price && <div style={{ color: "var(--coral)", fontSize: 14, marginTop: -16, marginBottom: 16 }}>{fieldErrors.price}</div>}
-            
+
             <div style={{ background: "var(--teal-light)", borderRadius: "var(--radius-sm)", padding: 16 }}>
               <div style={{ fontWeight: 600, marginBottom: 8 }}>💡 Pricing Estimate</div>
-              {[["Your earnings (after 5% fee)", `${form.price ? Math.round(form.price * 0.95) : "—"} TND`], ["Buyer pays", `${form.price ? Number(form.price) : "—"} TND`]].map(([l, v]) => (
+              {[["Your earnings (after 5% fee)", `${form.price ? Math.round(form.price * 0.95) : "-"} TND`], ["Buyer pays", `${form.price ? Number(form.price) : "-"} TND`]].map(([l, v]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 4 }}>
                   <span style={{ color: "var(--gray)" }}>{l}</span>
                   <span style={{ fontWeight: 700 }}>{v}</span>
@@ -1494,6 +1595,10 @@ function SellPage({ setPage, language }) {
                   <span style={{ fontWeight: 600 }}>{v}{k === "price" ? " TND" : ""}</span>
                 </div>
               ))}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}>
+                <span style={{ color: "var(--gray)", textTransform: "capitalize" }}>photos</span>
+                <span style={{ fontWeight: 600 }}>{selectedImages.length}</span>
+              </div>
             </div>
             <button className="btn-primary" style={{ width: "100%", padding: 16, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handlePublish} disabled={loading}>
               {loading ? "Publishing..." : "🚀 Publish Listing"}
@@ -3731,15 +3836,7 @@ export default function App() {
         setLoading(true);
         setListingError("");
         const data = await api.fetchListings();
-        // Normalize listing data: map imageUrl to image, and extract owner avatar from database
-        const normalized = Array.isArray(data) ? data.map(item => ({
-          ...item,
-          image: item.image || item.imageUrl,
-          seller: item.owner?.fullName || item.seller || "Seller",
-          sellerAvatar: item.owner?.imageUrl || null,
-          sellerCity: item.owner?.city || item.location || "Tunisia",
-          sellerId: item.owner?.id
-        })) : [];
+        const normalized = Array.isArray(data) ? data.map(normalizeListingForUi) : [];
         setListings(normalized);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
