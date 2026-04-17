@@ -20,6 +20,7 @@ public interface ListingRepository extends JpaRepository<Listing, Long> {
     List<Listing> findByTitleContaining(String title);
     List<Listing> findByCategory(String category);
     List<Listing> findByPriceBetween(Double min, Double max);
+    List<Listing> findByOwner_Id(Long ownerId);
 
     void deleteByOwner_Id(Long ownerId);
 }

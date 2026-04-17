@@ -13,6 +13,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
 
     List<Conversation> findByUser1_IdOrUser2_Id(Long user1Id, Long user2Id);
 
+    List<Conversation> findByListingIdIn(List<Long> listingIds);
+
     void deleteByUser1_IdOrUser2_Id(Long user1Id, Long user2Id);
+
+    void deleteByListingIdIn(List<Long> listingIds);
     
 }

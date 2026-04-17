@@ -3,6 +3,7 @@ import * as api from "./api";
 import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
 import { ProtectedAdminRoute } from "./ProtectedAdminRoute";
 import { AdminPage } from "./pages/AdminPage";
+import logoImage from "./assets/SwapTN-Photoroom.png";
 
 // ─── ERROR BOUNDARY ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -53,7 +54,7 @@ const EN_TRANSLATIONS = {
   discoverItems: "Discover amazing pre-loved items", listAnItem: "List an Item", addPhotos: "Add Photos",
   turnUnused: "Turn your unused clothes into cash 💸", dragDropPhotos: "Drag & drop photos here",
   clickBrowse: "or click to browse your device", choosePhotos: "Choose Photos", itemDetails: "Item Details",
-  setPrice: "Set Your Price", reviewPublish: "Review & Publish", publishListing: "Publish Listing",
+  setPrice: "Set Your Price", publishStep: "Publish", publishListing: "Publish Listing",
   browse: "Browse", back: "← Back", continue: "Continue →", total: "Total",
   searchItems: "Search brands, items…", noResults: "No items found", filter: "Filter", sort: "Sort by", newest: "Newest",
   priceHigh: "Price: High to Low", priceLow: "Price: Low to High", title: "Title", brand: "Brand",
@@ -273,6 +274,237 @@ const globalStyle = `
     animation: floatIn 0.35s ease-out;
   }
 
+  .auth-shell {
+    min-height: calc(100vh - 88px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 42px 24px;
+    animation: fadeIn 0.4s ease;
+    position: relative;
+  }
+
+  .auth-back {
+    position: absolute;
+    top: 22px;
+    left: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(183, 204, 223, 0.9);
+    color: var(--teal-dark);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 999px;
+    padding: 8px 14px;
+    box-shadow: 0 10px 22px rgba(10, 39, 67, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .auth-back:hover {
+    transform: translateY(-1px);
+    background: #ffffff;
+    box-shadow: 0 14px 26px rgba(10, 39, 67, 0.13);
+  }
+
+  .auth-layout {
+    width: 100%;
+    max-width: 1060px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 1px solid rgba(192, 210, 226, 0.9);
+    box-shadow: 0 24px 64px rgba(10, 38, 66, 0.14);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(6px);
+  }
+
+  .auth-brand {
+    padding: 44px 42px 38px;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.23), transparent 42%),
+      radial-gradient(circle at 86% 90%, rgba(255, 255, 255, 0.16), transparent 44%),
+      linear-gradient(152deg, #0f766e 0%, #155e75 54%, #0b3e61 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 26px;
+  }
+
+  .auth-brand-logo-box {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(227, 243, 255, 0.32);
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(5px);
+  }
+
+  .auth-brand-logo {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 18px 30px rgba(7, 35, 56, 0.45));
+  }
+
+  .auth-kicker {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(225, 245, 252, 0.95);
+  }
+
+  .auth-brand-title {
+    font-family: var(--font-display);
+    font-size: 40px;
+    line-height: 1.1;
+    margin-top: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  .auth-brand-subtitle {
+    margin-top: 12px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(235, 246, 252, 0.95);
+    max-width: 44ch;
+  }
+
+  .auth-feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .auth-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: rgba(243, 250, 255, 0.95);
+  }
+
+  .auth-feature-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .auth-form-panel {
+    padding: 40px 36px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .auth-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+    background: #edf3f8;
+    border: 1px solid #d8e5f1;
+    border-radius: 999px;
+    padding: 4px;
+    margin: 16px 0 24px;
+    gap: 4px;
+  }
+
+  .auth-toggle-btn {
+    border: none;
+    background: transparent;
+    color: #516277;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+
+  .auth-toggle-btn.active {
+    background: #ffffff;
+    color: var(--teal-dark);
+    box-shadow: 0 8px 18px rgba(10, 39, 67, 0.11);
+  }
+
+  @media (max-width: 1020px) {
+    .auth-layout {
+      grid-template-columns: 1fr;
+      max-width: 640px;
+    }
+
+    .auth-brand {
+      padding: 36px 28px;
+      gap: 20px;
+    }
+
+    .auth-brand-logo {
+      max-width: 300px;
+    }
+
+    .auth-brand-title {
+      font-size: 34px;
+    }
+
+    .auth-form-panel {
+      padding: 32px 24px 30px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .auth-shell {
+      min-height: calc(100vh - 78px);
+      padding: 24px 14px;
+      display: block;
+    }
+
+    .auth-back {
+      position: static;
+      margin-bottom: 14px;
+    }
+
+    .auth-layout {
+      border-radius: 20px;
+    }
+
+    .auth-brand {
+      padding: 28px 20px;
+    }
+
+    .auth-brand-logo-box {
+      padding: 14px;
+      border-radius: 18px;
+      margin-bottom: 14px;
+    }
+
+    .auth-brand-logo {
+      max-width: 240px;
+    }
+
+    .auth-brand-title {
+      font-size: 30px;
+    }
+
+    .auth-form-panel {
+      padding: 24px 18px 22px;
+    }
+  }
+
   @media (max-width: 920px) {
     .page-header { font-size: 28px; }
   }
@@ -299,21 +531,27 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
   const innerStyle = {
     width: "100%",
     display: "flex", alignItems: "center",
-    padding: "0 24px", height: 70, gap: 16,
+    padding: "0 24px", height: 78, gap: 16,
   };
 
   return (
     <nav style={navStyle}>
       <div style={innerStyle}>
         {/* Logo */}
-        <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8, minWidth: "fit-content" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, var(--teal), var(--teal-dark))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, color: "white", fontWeight: 900
-          }}>SW</div>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 900, color: "var(--teal-dark)" }}>SwapTn</span>
+        <div onClick={() => setPage("home")} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12, minWidth: "fit-content" }}>
+          <img
+            src={logoImage}
+            alt="SwapTn logo"
+            style={{
+              height: 58,
+              width: "auto",
+              maxWidth: 200,
+              objectFit: "contain",
+              display: "block",
+              filter: "drop-shadow(0 6px 14px rgba(15,111,117,0.22))"
+            }}
+          />
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 900, color: "var(--teal-dark)" }}>SwapTn</span>
         </div>
 
         {/* Spacer */}
@@ -349,21 +587,6 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
 
         {/* Spacer */}
         <div style={{ flex: 1 }}></div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: "var(--teal-dark)",
-            background: "var(--teal-light)",
-            border: "1px solid #cbe7e2",
-            borderRadius: 999,
-            padding: "6px 10px"
-          }}>
-            ENGLISH UI
-          </span>
-        </div>
 
         {/* Login / Profile */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -878,7 +1101,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
 
 function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const t = TRANSLATIONS[language];
-  const { wishlist, setWishlist, user } = useApp();
+  const { wishlist, setWishlist, user, setLoginNotice, setConversationFocus } = useApp();
   const [liked, setLiked] = useState(wishlist.some(i => i.id === item.id));
   const [activeImg, setActiveImg] = useState(0);
   const [messageSending, setMessageSending] = useState(false);
@@ -892,8 +1115,6 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
     name: item?.seller || sellerObj?.fullName || "Seller", 
     id: item?.sellerId || sellerObj?.id,
     avatar: item?.sellerAvatar || sellerObj?.imageUrl || null,
-    rating: 4.5, 
-    sales: 10, 
     location: item?.sellerCity || sellerObj?.city || item?.location || "Tunisia" 
   };
   
@@ -904,13 +1125,26 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
   
   const imgs = [item?.image].filter(Boolean);
 
+  const requireLogin = (actionText = "continue") => {
+    if (user) return true;
+    setLoginNotice(`You have to log in first to ${actionText}.`);
+    setPage("login");
+    return false;
+  };
+
   const startConversation = async () => {
+    if (!requireLogin("contact this seller")) return;
     setMessageSending(true);
     try {
       const conversation = await api.createConversation(item?.id, seller?.id);
-      if (conversation?.id) {
-        setPage("messages");
-      }
+      const focusPayload = {
+        conversationId: conversation?.id ?? null,
+        listingId: item?.id ?? conversation?.listingId ?? null,
+        listingName: item?.title ?? conversation?.listingName ?? null,
+        otherUserId: seller?.id ?? conversation?.otherUser?.id ?? null,
+      };
+      setConversationFocus(focusPayload);
+      setPage("messages");
     } catch (err) {
       console.error("Conversation error:", err);
       alert(err.message || "Request failed");
@@ -967,7 +1201,11 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
                   {messageSending ? "⏳ Opening chat..." : "⚡ Buy Now"}
                 </button>
               </div>
-              <button onClick={() => { setLiked(!liked); liked ? setWishlist(w => w.filter(i => i.id !== item.id)) : setWishlist(w => [...w, item]); }} style={{
+              <button onClick={() => {
+                if (!requireLogin("save this listing to your wishlist")) return;
+                setLiked(!liked);
+                liked ? setWishlist(w => w.filter(i => i.id !== item.id)) : setWishlist(w => [...w, item]);
+              }} style={{
                 width: "100%", padding: 12, border: `2px solid ${liked ? "var(--coral)" : "var(--border)"}`,
                 borderRadius: 50, background: liked ? "#fff0f0" : "white",
                 color: liked ? "var(--coral)" : "var(--gray)",
@@ -986,7 +1224,10 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
           )}
 
           {/* Report Button */}
-          <button style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, background: "#fff", color: "#dc2626", border: "2px solid #fecaca", borderRadius: 50, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "all 0.2s", opacity: reportSubmitting ? 0.6 : 1 }} onClick={() => setShowReportModal(true)} disabled={reportSubmitting}>
+          <button style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, background: "#fff", color: "#dc2626", border: "2px solid #fecaca", borderRadius: 50, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "all 0.2s", opacity: reportSubmitting ? 0.6 : 1 }} onClick={() => {
+            if (!requireLogin("report this listing")) return;
+            setShowReportModal(true);
+          }} disabled={reportSubmitting}>
             🚩 Report this Listing
           </button>
 
@@ -1018,6 +1259,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
                     Cancel
                   </button>
                   <button onClick={async () => {
+                    if (!requireLogin("report this listing")) return;
                     setReportSubmitting(true);
                     try {
                       await api.createReport({
@@ -1051,7 +1293,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             <Avatar src={seller.avatar} size={56} alt={`${seller.name} avatar`} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{seller.name}</div>
-              <div style={{ color: "var(--gray)", fontSize: 13 }}>⭐ {seller.rating} · {seller.sales} sales · {seller.location}</div>
+              <div style={{ color: "var(--gray)", fontSize: 13 }}>📍 {seller.location}</div>
             </div>
             <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => { setSelectedSeller(seller); setPage("seller"); }}>View Profile</button>
           </div>
@@ -1144,7 +1386,7 @@ function SellPage({ setPage, language }) {
     }
   };
 
-  const steps = ["📸 " + t.addPhotos, "📝 " + t.itemDetails, "💰 " + t.setPrice, "✅ " + t.reviewPublish];
+  const steps = ["📸 " + t.addPhotos, "📝 " + t.itemDetails, "💰 " + t.setPrice, "✅ " + t.publishStep];
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -1186,7 +1428,7 @@ function SellPage({ setPage, language }) {
               />
               {form.imageUrl && (
                 <div style={{ marginTop: 16 }}>
-                  <img src={form.imageUrl} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="Preview" onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Invalid+URL"; }} />
+                  <img src={form.imageUrl} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: "var(--radius-sm)", objectFit: "cover" }} alt="Image" onError={(e) => { e.target.src = "https://via.placeholder.com/200?text=Invalid+URL"; }} />
                 </div>
               )}
             </div>
@@ -1244,7 +1486,7 @@ function SellPage({ setPage, language }) {
         )}
         {step === 4 && (
           <div style={{ animation: "slideIn 0.3s ease" }}>
-            <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Review & Publish</h2>
+            <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Publish</h2>
             <div style={{ background: "var(--light-gray)", borderRadius: "var(--radius-sm)", padding: 20, marginBottom: 24 }}>
               {Object.entries(form).filter(([k, v]) => v && k !== "images").map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}>
@@ -1311,7 +1553,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
   const [editLoading, setEditLoading] = useState(false);
   // ✅ FIXED: Filter listings to only show current user's listings
   const userItems = user && user.id ? listings.filter(l => l.owner?.id === user.id || l.seller?.id === user.id) : [];
-  const u = user || { name: "User", avatar: null, rating: 0, sales: 0, location: "Tunisia", bio: "User profile", followers: 0, following: 0 };
+  const u = user || { name: "User", avatar: null, location: "Tunisia", bio: "User profile" };
 
   const handleEditProfile = async () => {
     setEditError("");
@@ -1357,12 +1599,9 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
             <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900, marginBottom: 4 }}>{u.name}</h1>
             <p style={{ color: "var(--gray)", marginBottom: 16 }}>{u.bio}</p>
             <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-              {[["⭐", u.rating, "Rating"], ["🛍️", u.sales, "Sales"], ["👥", u.followers, "Followers"], ["📍", u.location, ""]].map(([icon, val, label]) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700 }}>{icon} {val}</div>
-                  {label && <div style={{ fontSize: 12, color: "var(--gray)" }}>{label}</div>}
-                </div>
-              ))}
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--teal-dark)" }}>
+                📍 {u.location || "Tunisia"}
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1384,7 +1623,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "white", borderRadius: "var(--radius)", padding: 6, boxShadow: "var(--shadow)" }}>
-        {[["listings", "🏷️ My Listings"], ["sold", "✅ Sold"], ["reviews", "⭐ Reviews"], ["orders", "📦 Orders"]].map(([key, label]) => (
+        {[["listings", "🏷️ My Listings"], ["sold", "✅ Sold"]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: "10px 16px", borderRadius: "var(--radius-sm)",
             background: tab === key ? "var(--teal)" : "none",
@@ -1408,28 +1647,6 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
       {tab === "sold" && (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
           <p>Sold items will appear here</p>
-        </div>
-      )}
-      {tab === "reviews" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease" }}>
-          {[{ user: "mouldi_h", avatar: null, rating: 5, text: "Amazing seller! Item was exactly as described. Fast shipping too! 🌟", item: "Zara Floral Dress" }, { user: "ahmed_k", avatar: null, rating: 5, text: "Very fast and professional. Would buy again!", item: "H&M Hoodie" }].map((r, i) => (
-            <div key={i} className="card" style={{ padding: 20 }}>
-              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-                <Avatar src={r.avatar} size={44} alt={`${r.user} avatar`} />
-                <div>
-                  <div style={{ fontWeight: 700 }}>{r.user}</div>
-                  <div style={{ color: "var(--gold)" }}>{"⭐".repeat(r.rating)}</div>
-                </div>
-                <span style={{ marginLeft: "auto", fontSize: 13, color: "var(--gray)" }}>Re: {r.item}</span>
-              </div>
-              <p style={{ color: "var(--dark)", fontSize: 15 }}>{r.text}</p>
-            </div>
-          ))}
-        </div>
-      )}
-      {tab === "orders" && (
-        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-          <p>Your orders will appear here</p>
         </div>
       )}
 
@@ -1476,7 +1693,7 @@ function SellerPage({ setPage, sellerData, language }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
-  const seller = sellerData || { name: "Seller", avatar: null, bio: "Seller profile", rating: 4.5, sales: 0, followers: 0, location: "Tunisia" };
+  const seller = sellerData || { name: "Seller", avatar: null, bio: "Seller profile", location: "Tunisia" };
   const items = [];
   const canReportSeller = Boolean(seller?.id) && (!user || Number(user.id) !== Number(seller.id));
 
@@ -1490,9 +1707,7 @@ function SellerPage({ setPage, sellerData, language }) {
             <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900 }}>{seller.name}</h1>
             <p style={{ color: "var(--gray)", margin: "6px 0 12px" }}>{seller.bio}</p>
             <div style={{ display: "flex", gap: 20 }}>
-              {[["⭐ " + seller.rating, "Rating"], [seller.sales + " items sold", ""], [seller.followers + " followers", ""]].map(([val, label]) => (
-                <span key={val} style={{ fontSize: 14, fontWeight: 600, color: "var(--teal-dark)" }}>{val}</span>
-              ))}
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--teal-dark)" }}>📍 {seller.location || "Tunisia"}</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
@@ -1541,7 +1756,7 @@ function SellerPage({ setPage, sellerData, language }) {
               🚩 Report Profile
             </h2>
             <p style={{ color: "var(--gray)", marginBottom: 20, fontSize: 14 }}>
-              Tell us why this profile should be reviewed by our moderation team.
+              Tell us why this profile should be checked by our moderation team.
             </p>
 
             <textarea
@@ -1625,11 +1840,18 @@ function SellerPage({ setPage, sellerData, language }) {
 
 function LoginPage({ setPage, language }) {
   const t = TRANSLATIONS[language];
-  const { setUser } = useApp();
+  const { setUser, loginNotice, setLoginNotice } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ email: "", password: "", name: "" });
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loginNotice) return;
+    setNotice(loginNotice);
+    setLoginNotice("");
+  }, [loginNotice, setLoginNotice]);
 
   const handle = async () => {
     setError("");
@@ -1646,17 +1868,14 @@ function LoginPage({ setPage, language }) {
             email: response.email,
             avatar: response.imageUrl || "",
             role: response.role || "USER",
-            rating: 0,
-            sales: 0,
             location: "Tunisia",
             bio: "User",
-            joined: new Date().getFullYear().toString(),
-            followers: 0,
-            following: 0
+            joined: new Date().getFullYear().toString()
           };
           setUser(userData);
           localStorage.setItem('swaptn_user', JSON.stringify(userData));
           localStorage.removeItem('swaptn_remember_session');
+          setNotice("");
           setPage("home");
         }
       } else {
@@ -1672,17 +1891,14 @@ function LoginPage({ setPage, language }) {
               email: loginResponse.email,
               avatar: loginResponse.imageUrl || "",
               role: loginResponse.role || "USER",
-              rating: 0,
-              sales: 0,
               location: "Tunisia",
               bio: "New seller",
-              joined: new Date().getFullYear().toString(),
-              followers: 0,
-              following: 0
+              joined: new Date().getFullYear().toString()
             };
             setUser(userData);
             localStorage.setItem('swaptn_user', JSON.stringify(userData));
             localStorage.removeItem('swaptn_remember_session');
+            setNotice("");
             setPage("home");
           }
         }
@@ -1696,50 +1912,119 @@ function LoginPage({ setPage, language }) {
   };
 
   return (
-    <div style={{ minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.4s ease" }}>
-      <div style={{ position: "absolute", top: 24, left: 24 }}>
-        <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>← Back to Home</button>
-      </div>
-      <div style={{ width: "100%", maxWidth: 440 }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 60, height: 60, background: "linear-gradient(135deg, var(--teal), var(--teal-dark))", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, color: "white", fontWeight: 900, margin: "0 auto 16px" }}>SW</div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 900 }}>{isLogin ? "Welcome back!" : "Join SwapTn"}</h1>
-          <p style={{ color: "var(--gray)", marginTop: 8 }}>{isLogin ? "Sign in to your account" : "Create your free account"}</p>
-        </div>
+    <div className="auth-shell">
+      <button className="auth-back" onClick={() => setPage("home")}>← Back to Home</button>
 
-        <div className="card" style={{ padding: 36 }}>
-          {error && <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>{error}</div>}
+      <div className="auth-layout">
+        <section className="auth-brand">
+          <div>
+            <div className="auth-brand-logo-box">
+              <img
+                src={logoImage}
+                alt="SwapTn logo"
+                className="auth-brand-logo"
+              />
+            </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {!isLogin && (
-              <div>
-                <label htmlFor="fullname-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name</label>
-                <input id="fullname-input" className="input-field" placeholder="Yassine Cherif" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={loading} />
-              </div>
-            )}
-            <div>
-              <label htmlFor="email-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Email</label>
-              <input id="email-input" className="input-field" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={loading} />
-            </div>
-            <div>
-              <label htmlFor="password-input" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>Password</label>
-              <input id="password-input" className="input-field" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} disabled={loading} />
-            </div>
+            <p className="auth-kicker">Trusted Fashion Marketplace</p>
+            <h1 className="auth-brand-title">SwapTn</h1>
+            <p className="auth-brand-subtitle">
+              Sell faster, buy smarter, and give every piece a new life.
+              A cleaner way to shop pre-loved fashion in Tunisia.
+            </p>
           </div>
 
-          {isLogin && <div style={{ textAlign: "right", marginTop: 8 }}><a href="#" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 500 }}>Forgot password?</a></div>}
+          <ul className="auth-feature-list">
+            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Instant conversations with buyers and sellers</li>
+            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Secure account and profile management</li>
+            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Faster listing flow to publish in minutes</li>
+          </ul>
+        </section>
 
-          <button className="btn-primary" style={{ width: "100%", marginTop: 24, padding: 14, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handle} disabled={loading}>
-            {loading ? "Loading..." : isLogin ? "Sign In →" : "Create Account →"}
-          </button>
-        </div>
+        <section className="auth-form-panel">
+          <div>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 34, fontWeight: 900, letterSpacing: "-0.01em", color: "var(--dark)" }}>
+              {isLogin ? "Welcome Back" : "Create Your Account"}
+            </h2>
+            <p style={{ color: "var(--gray)", marginTop: 8, fontSize: 15 }}>
+              {isLogin ? "Sign in to continue your SwapTn journey." : "Join SwapTn and start listing your fashion today."}
+            </p>
+          </div>
 
-        <p style={{ textAlign: "center", marginTop: 20, color: "var(--gray)", fontSize: 14 }}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <span onClick={() => { if (!loading) { setIsLogin(!isLogin); setError(""); setForm({ email: "", password: "", name: "" }); } }} style={{ color: "var(--teal)", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}>
-            {isLogin ? "Sign up" : "Sign in"}
-          </span>
-        </p>
+          <div className="auth-toggle">
+            <button
+              className={`auth-toggle-btn ${isLogin ? "active" : ""}`}
+              onClick={() => {
+                if (loading || isLogin) return;
+                setIsLogin(true);
+                setError("");
+                setForm({ email: "", password: "", name: "" });
+              }}
+              disabled={loading}
+            >
+              Sign In
+            </button>
+            <button
+              className={`auth-toggle-btn ${!isLogin ? "active" : ""}`}
+              onClick={() => {
+                if (loading || !isLogin) return;
+                setIsLogin(false);
+                setError("");
+                setForm({ email: "", password: "", name: "" });
+              }}
+              disabled={loading}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <div className="card" style={{ padding: 30, borderRadius: 22, border: "1px solid #d7e5f2", boxShadow: "0 16px 35px rgba(12, 35, 67, 0.12)", background: "rgba(255,255,255,0.96)" }}>
+            {notice && <div style={{ background: "#fff6e6", border: "1px solid #f5c87a", color: "#9a5b00", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 600, textAlign: "center" }}>🔒 {notice}</div>}
+            {error && <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>{error}</div>}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {!isLogin && (
+                <div>
+                  <label htmlFor="fullname-input" style={{ fontSize: 14, fontWeight: 700, display: "block", marginBottom: 6 }}>Full Name</label>
+                  <input id="fullname-input" className="input-field" placeholder="Yassine Cherif" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={loading} />
+                </div>
+              )}
+              <div>
+                <label htmlFor="email-input" style={{ fontSize: 14, fontWeight: 700, display: "block", marginBottom: 6 }}>Email Address</label>
+                <input id="email-input" className="input-field" type="email" placeholder="you@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={loading} />
+              </div>
+              <div>
+                <label htmlFor="password-input" style={{ fontSize: 14, fontWeight: 700, display: "block", marginBottom: 6 }}>Password</label>
+                <input id="password-input" className="input-field" type="password" placeholder="••••••••" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} disabled={loading} />
+              </div>
+            </div>
+
+            {isLogin && (
+              <div style={{ textAlign: "right", marginTop: 8 }}>
+                <button type="button" style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>Forgot password?</button>
+              </div>
+            )}
+
+            <button className="btn-primary" style={{ width: "100%", marginTop: 24, padding: 14, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handle} disabled={loading}>
+              {loading ? "Loading..." : isLogin ? "Sign In →" : "Create Account →"}
+            </button>
+          </div>
+
+          <p style={{ textAlign: "center", marginTop: 18, color: "var(--gray)", fontSize: 14 }}>
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <span
+              onClick={() => {
+                if (loading) return;
+                setIsLogin(!isLogin);
+                setError("");
+                setForm({ email: "", password: "", name: "" });
+              }}
+              style={{ color: "var(--teal)", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer" }}
+            >
+              {isLogin ? "Sign up" : "Sign in"}
+            </span>
+          </p>
+        </section>
       </div>
     </div>
   );
@@ -2680,7 +2965,7 @@ export function ShippingPage({ setPage }) {
       <BackBtn onClick={() => setPage("home")} />
       <div className="swp-eyebrow">Delivery across Tunisia</div>
       <h1 className="swp-h1">Shipping <span className="swp-h1-italic">information</span></h1>
-      <p className="swp-lead">Fast, tracked, and insured delivery options for every order on SwapTn.</p>
+      <p className="swp-lead">Fast, tracked, and insured delivery options for every purchase on SwapTn.</p>
 
       {/* Options */}
       <CardSection label="Shipping Options">
@@ -2801,7 +3086,7 @@ export function AboutUsPage({ setPage }) {
 
         <CardSection label="Our Story">
           <p style={{ fontSize: 14.5, color: "var(--muted)", lineHeight: 1.8 }}>
-            Founded in 2023, SwapTn started as a simple idea: connect style-conscious Tunisians who want to buy and sell pre-owned fashion. What began as a passion project has grown into a community of over <strong style={{ color: "var(--charcoal)" }}>50,000 active users</strong> buying and selling authentic clothes, shoes, and accessories across Tunisia.
+            Founded in 2026, SwapTn started as a simple idea: connect style-conscious Tunisians who want to buy and sell pre-owned fashion. What began as a passion project has grown into a community of over <strong style={{ color: "var(--charcoal)" }}>50,000 active users</strong> buying and selling authentic clothes, shoes, and accessories across Tunisia.
           </p>
         </CardSection>
 
@@ -3008,7 +3293,7 @@ export function HelpCenterPage({ setPage }) {
   const [open, setOpen] = useState(null);
 
   const sections = [
-    { q: "How do I buy an item?", steps: ["Browse using categories or search for specific brands", "Click an item to view details, photos, and seller info", "Add to cart or purchase directly", "Check out securely with multiple payment methods", "Track your order and receive your item"] },
+    { q: "How do I buy an item?", steps: ["Browse using categories or search for specific brands", "Click an item to view details, photos, and seller info", "Add to cart or purchase directly", "Check out securely with multiple payment methods", "Track your package and receive your item"] },
     { q: "How do I sell an item?", steps: ["Click 'Sell' or 'List an Item' in the navigation", "Take clear photos from multiple angles", "Add details: title, brand, size, condition, description", "Set your price competitively", "Publish your listing and communicate with buyers", "Ship once sold and get paid within 5–7 business days"] },
     { q: "How do search and filters work?", bullets: ["Search for specific brands (e.g., 'Nike', 'Zara')", "Filter by Category, Condition, Size, or Price Range", "Sort by Newest, Price High→Low, or Price Low→High", "Save searches to get notified of new matches"] },
     { q: "What payment methods are accepted?", bullets: ["Credit/Debit Cards (Visa, Mastercard)", "Online Banking", "Mobile Wallets", "Bank Transfers", "All transactions are SSL-encrypted"] },
@@ -3155,7 +3440,7 @@ export function SafeBuyingPage({ setPage }) {
       icon: Icon.shield,
       items: [
         "Look for the ✓ Verified badge next to seller names",
-        "Check ratings and reviews from previous buyers",
+        "Check ratings and feedback from previous buyers",
         "New sellers: start with purchases under 100 TND first",
         "Avoid sellers with multiple complaints about authenticity",
       ],
@@ -3315,7 +3600,7 @@ export function ReportIssuePage({ setPage }) {
 
         <div className="swp-card-label">What happens next</div>
         {[
-          "Our team reviews your report within 24–48 hours",
+          "Our team checks your report within 24–48 hours",
           "We investigate and may contact both parties",
           "Actions may include warnings, suspension, or removal",
           "We'll email you with the outcome",
@@ -3378,7 +3663,7 @@ function Footer({ setPage, language }) {
           ))}
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>© 2025 SwapTn.tn · All rights reserved</span>
+          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>© 2026 SwapTn.tn · All rights reserved</span>
           <div style={{ display: "flex", gap: 16 }}>
             {["Privacy Policy", "Terms of Service", "Cookies"].map(l => <span key={l} style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer" }}>{l}</span>)}
           </div>
@@ -3391,7 +3676,7 @@ function Footer({ setPage, language }) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [page, setPage] = useState("home");
+  const [page, setPageState] = useState("home");
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -3402,6 +3687,13 @@ export default function App() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listingError, setListingError] = useState("");
+  const [loginNotice, setLoginNotice] = useState("");
+  const [conversationFocus, setConversationFocus] = useState(null);
+
+  const setPage = (nextPage) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setPageState(nextPage);
+  };
 
   // ─── Load user from localStorage on mount ──────────────────────────────────
   useEffect(() => {
@@ -3467,6 +3759,10 @@ export default function App() {
     listings, setListings,
     loading,
     listingError,
+    loginNotice,
+    setLoginNotice,
+    conversationFocus,
+    setConversationFocus,
     setPage,
     setSelectedItem,
     setSelectedSeller,
@@ -3480,7 +3776,7 @@ export default function App() {
       case "item": return <ItemPage item={selectedItem} setPage={setPage} setSelectedSeller={setSelectedSeller} language={language} />;
       case "sell": return <SellPage setPage={setPage} language={language} />;
       case "wishlist": return <WishlistPage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
-      case "messages": return <MessagesPageComponent language={language} setPage={setPage} user={user} TRANSLATIONS={TRANSLATIONS} />;
+      case "messages": return <MessagesPageComponent language={language} setPage={setPage} user={user} TRANSLATIONS={TRANSLATIONS} conversationFocus={conversationFocus} clearConversationFocus={() => setConversationFocus(null)} />;
       case "profile": return <ProfilePage setPage={setPage} setSelectedItem={setSelectedItem} setUser={setUser} language={language} listings={listings} />;
       case "seller": return <SellerPage setPage={setPage} sellerData={selectedSeller} language={language} />;
       case "login": return <LoginPage setPage={setPage} language={language} />;

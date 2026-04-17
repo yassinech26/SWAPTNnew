@@ -12,6 +12,10 @@ import com.cherifyedeshemdenebenhamed.demo.model.Message;
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByConversationOrderByTimestampAsc(Conversation conversation);
 
+    List<Message> findBySender_Id(Long senderId);
+
+    List<Message> findByConversation_IdIn(List<Long> conversationIds);
+
     void deleteBySender_Id(Long senderId);
 
     void deleteByConversation_IdIn(List<Long> conversationIds);

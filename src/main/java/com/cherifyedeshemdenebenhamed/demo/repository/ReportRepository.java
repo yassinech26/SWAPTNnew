@@ -32,4 +32,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     // Supprimer les signalements d'un type + cible donnée
     void deleteByTypeAndTargetId(ReportType type, Long targetId);
 
+    // Supprimer les signalements d'un type + plusieurs cibles
+    void deleteByTypeAndTargetIdIn(ReportType type, List<Long> targetIds);
+
 }

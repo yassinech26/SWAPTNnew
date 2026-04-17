@@ -1,7 +1,10 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,8 @@ import com.cherifyedeshemdenebenhamed.demo.dto.UpdateUserRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.UserResponse;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
+import com.cherifyedeshemdenebenhamed.demo.model.Listing;
+import com.cherifyedeshemdenebenhamed.demo.model.Message;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
 import com.cherifyedeshemdenebenhamed.demo.model.Review;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
@@ -212,14 +217,59 @@ public class UserService {
     public void deleteUserByAdmin(@NonNull Long userId) {
         User user = getUserById(userId);
 
-        List<Long> conversationIds = conversationRepository
+        List<Long> listingIds = listingRepository.findByOwner_Id(userId)
+            .stream()
+            .map(Listing::getId)
+            .toList();
+
+        List<Long> conversationIdsByUser = conversationRepository
                 .findByUser1_IdOrUser2_Id(userId, userId)
                 .stream()
                 .map(Conversation::getId)
                 .toList();
 
-        if (!conversationIds.isEmpty()) {
-            messageRepository.deleteByConversation_IdIn(conversationIds);
+        List<Long> conversationIdsByListing = listingIds.isEmpty()
+            ? List.of()
+            : conversationRepository.findByListingIdIn(listingIds)
+                .stream()
+                .map(Conversation::getId)
+                .toList();
+
+        Set<Long> allConversationIds = new LinkedHashSet<>();
+        allConversationIds.addAll(conversationIdsByUser);
+        allConversationIds.addAll(conversationIdsByListing);
+
+        List<Long> messageIdsBySender = messageRepository.findBySender_Id(userId)
+            .stream()
+            .map(Message::getId)
+            .toList();
+
+        List<Long> messageIdsByConversation = allConversationIds.isEmpty()
+            ? List.of()
+            : messageRepository.findByConversation_IdIn(new ArrayList<>(allConversationIds))
+                .stream()
+                .map(Message::getId)
+                .toList();
+
+        Set<Long> allMessageIds = new LinkedHashSet<>();
+        allMessageIds.addAll(messageIdsBySender);
+        allMessageIds.addAll(messageIdsByConversation);
+
+        if (!allMessageIds.isEmpty()) {
+            reportRepository.deleteByTypeAndTargetIdIn(ReportType.MESSAGE, new ArrayList<>(allMessageIds));
+        }
+        if (!allConversationIds.isEmpty()) {
+            reportRepository.deleteByTypeAndTargetIdIn(ReportType.CONVERSATION, new ArrayList<>(allConversationIds));
+        }
+        if (!listingIds.isEmpty()) {
+            reportRepository.deleteByTypeAndTargetIdIn(ReportType.LISTING, listingIds);
+        }
+
+        if (!allConversationIds.isEmpty()) {
+            messageRepository.deleteByConversation_IdIn(new ArrayList<>(allConversationIds));
+        }
+        if (!listingIds.isEmpty()) {
+            conversationRepository.deleteByListingIdIn(listingIds);
         }
 
         messageRepository.deleteBySender_Id(userId);
