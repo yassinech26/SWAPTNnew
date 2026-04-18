@@ -240,6 +240,12 @@ export async function sendMessage(conversationId, content) {
   });
 }
 
+export async function deleteMessage(messageId) {
+  return request(`/api/messages/${messageId}`, {
+    method: 'DELETE',
+  });
+}
+
 // ─── REVIEWS ──────────────────────────────────────────────────────────────────
 
 export async function fetchAllReviews() {

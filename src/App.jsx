@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+﻿import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import * as api from "./api";
 import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
 import { ProtectedAdminRoute } from "./ProtectedAdminRoute";
@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return <div style={{padding: "40px", textAlign: "center", color: "red"}}>
-        <h1>⚠️ App Error</h1>
+        <h1> App Error</h1>
         <p>{this.state.error?.message}</p>
         <button onClick={() => window.location.reload()} style={{padding: "10px 20px", marginTop: "20px"}}>Reload</button>
       </div>;
@@ -52,7 +52,7 @@ const EN_TRANSLATIONS = {
   howItWorks: "How It Works", photographList: "Photograph & List", chatNegotiate: "Chat & Negotiate",
   shipIt: "Ship It", getPaid: "Get Paid",
   discoverItems: "Discover amazing pre-loved items", listAnItem: "List an Item", addPhotos: "Add Photos",
-  turnUnused: "Turn your unused clothes into cash 💸", dragDropPhotos: "Drag & drop photos here",
+  turnUnused: "Turn your unused clothes into cash ", dragDropPhotos: "Drag & drop photos here",
   clickBrowse: "or click to browse your device", choosePhotos: "Choose Photos", itemDetails: "Item Details",
   setPrice: "Set Your Price", publishStep: "Publish", publishListing: "Publish Listing",
   browse: "Browse", back: "← Back", continue: "Continue →", total: "Total",
@@ -530,7 +530,7 @@ const globalStyle = `
 function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language, searchVal, setSearchVal }) {
   const { wishlist, user } = useApp();
   const t = TRANSLATIONS[language];
-  const quickLinks = [["🏠 Home", "home"], ["🛍️ Browse", "browse"], ["❤️ Wishlist", "wishlist"], ["💬 Messages", "messages"], ["📦 Sell", "sell"]];
+  const quickLinks = [[" Home", "home"], [" Browse", "browse"], ["❤️ Wishlist", "wishlist"], ["💬 Messages", "messages"], [" Sell", "sell"]];
 
   // Calculate user messages count
   const userMessageCount = 0;
@@ -583,7 +583,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
               onChange={e => setSearchVal(e.target.value)}
               onKeyDown={e => e.key === "Enter" && setPage("browse")}
             />
-            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--gray)", fontSize: 16 }}>🔍</span>
+            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--gray)", fontSize: 16 }}></span>
           </div>
           <button
             onClick={() => setPage("browse")}
@@ -605,7 +605,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
 
         {/* Login / Profile */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <NavBtn icon="🏷️" label={t.sell} highlight onClick={() => setPage("sell")} />
+          <NavBtn icon="" label={t.sell} highlight onClick={() => setPage("sell")} />
           <NavBtn icon="❤️" label={wishlist.length || ""} onClick={() => setPage("wishlist")} />
           <NavBtn icon="💬" label={userMessageCount || ""} onClick={() => setPage("messages")} badge={userMessageCount > 0} />
           {user && user.role === "ADMIN" && (
@@ -625,7 +625,7 @@ function Navbar({ page, setPage, selectedCategory, setSelectedCategory, language
               onMouseEnter={e => e.target.style.opacity = "0.8"}
               onMouseLeave={e => e.target.style.opacity = "1"}
             >
-              🛡️ Admin
+               Admin
             </button>
           )}
           {user
@@ -729,7 +729,7 @@ function Avatar({ src, size = 40, alt = "Avatar", style = {} }) {
       fontWeight: 700,
       border: style.border || "1px solid var(--border)"
     }}>
-      <span style={{ lineHeight: 1 }}>👤</span>
+      <span style={{ lineHeight: 1 }}></span>
     </div>
   );
 }
@@ -770,7 +770,7 @@ function ItemCard({ item, onClick }) {
         }}
         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.15)"}
         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-        >{liked ? "❤️" : "🤍"}</button>
+        >{liked ? "" : ""}</button>
         <span style={{
           position: "absolute", bottom: 8, left: 8,
           background: "rgba(0,0,0,0.65)", color: "white",
@@ -782,7 +782,7 @@ function ItemCard({ item, onClick }) {
         <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 8 }}>{item.brand} · {item.size}</div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--teal-dark)" }}>{item.price} TND</span>
-          <span style={{ fontSize: 12, color: "var(--gray)" }}>❤️ {item.likes}</span>
+          <span style={{ fontSize: 12, color: "var(--gray)" }}> {item.likes}</span>
         </div>
       </div>
     </div>
@@ -820,7 +820,7 @@ function HomePage({ setPage, setSelectedItem, language }) {
         <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", gap: 48 }}>
           <div style={{ flex: 1, color: "white" }}>
             <div style={{ display: "inline-block", background: "rgba(255,255,255,0.15)", borderRadius: 50, padding: "6px 16px", fontSize: 13, fontWeight: 600, marginBottom: 20, backdropFilter: "blur(8px)" }}>
-              🌿 {t.shopSustainably}
+               {t.shopSustainably}
             </div>
             <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(36px, 5vw, 64px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 20 }}>
               {t.warpdrobe2ndchance}
@@ -830,14 +830,14 @@ function HomePage({ setPage, setSelectedItem, language }) {
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button className="btn-primary" style={{ background: "white", color: "var(--teal-dark)", padding: "14px 32px", fontSize: 16 }} onClick={() => setPage("browse")}>
-                🛍️ {t.startShopping}
+                 {t.startShopping}
               </button>
               <button className="btn-secondary" style={{ borderColor: "rgba(255,255,255,0.5)", color: "black", padding: "14px 32px", fontSize: 16 }} onClick={() => setPage("sell")}>
-                ➕ {t.listItem}
+                 {t.listItem}
               </button>
             </div>
             <div style={{ display: "flex", gap: 32, marginTop: 40 }}>
-              {[["50k+", "Members"], ["120k+", "Items"], ["4.9★", "Trust Score"]].map(([n, l]) => (
+              {[["50k+", "Members"], ["120k+", "Items"], ["4.9", "Trust Score"]].map(([n, l]) => (
                 <div key={l} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900 }}>{n}</div>
                   <div style={{ fontSize: 13, opacity: 0.7 }}>{l}</div>
@@ -857,13 +857,13 @@ function HomePage({ setPage, setSelectedItem, language }) {
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900, marginBottom: 24 }}>{t.shopByCategory}</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 16 }}>
           {[
-            { name: "Tops", emoji: "👕", color: "#e3f2fd" },
-            { name: "Bottoms", emoji: "👖", color: "#fce4ec" },
-            { name: "Dresses", emoji: "👗", color: "#f3e5f5" },
-            { name: "Jackets", emoji: "🧥", color: "#e8f5e9" },
-            { name: "Shoes", emoji: "👟", color: "#fff8e1" },
-            { name: "Bags", emoji: "👜", color: "#e0f7fa" },
-            { name: "Accessories", emoji: "💍", color: "#fff3e0" },
+            { name: "Tops", emoji: "", color: "#e3f2fd" },
+            { name: "Bottoms", emoji: "", color: "#fce4ec" },
+            { name: "Dresses", emoji: "", color: "#f3e5f5" },
+            { name: "Jackets", emoji: "", color: "#e8f5e9" },
+            { name: "Shoes", emoji: "", color: "#fff8e1" },
+            { name: "Bags", emoji: "", color: "#e0f7fa" },
+            { name: "Accessories", emoji: "", color: "#fff3e0" },
           ].map(cat => (
             <div key={cat.name} onClick={() => setPage("browse")} style={{
               background: cat.color, borderRadius: "var(--radius)",
@@ -897,10 +897,10 @@ function HomePage({ setPage, setSelectedItem, language }) {
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 900, marginBottom: 48 }}>{t.howItWorks}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 32 }}>
             {[
-              { icon: "📸", step: "1", title: t.photographList, desc: "Snap your items, set a price, and list them in minutes." },
-              { icon: "💬", step: "2", title: t.chatNegotiate, desc: "Buyers can ask questions or make offers directly." },
-              { icon: "📦", step: "3", title: t.shipIt, desc: "Use our integrated shipping labels for hassle-free delivery." },
-              { icon: "💸", step: "4", title: t.getPaid, desc: "Receive your money once the buyer confirms receipt." },
+              { icon: "", step: "1", title: t.photographList, desc: "Snap your items, set a price, and list them in minutes." },
+              { icon: "", step: "2", title: t.chatNegotiate, desc: "Buyers can ask questions or make offers directly." },
+              { icon: "", step: "3", title: t.shipIt, desc: "Use our integrated shipping labels for hassle-free delivery." },
+              { icon: "", step: "4", title: t.getPaid, desc: "Receive your money once the buyer confirms receipt." },
             ].map(s => (
               <div key={s.step} style={{ background: "white", borderRadius: "var(--radius)", padding: 32, boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>{s.icon}</div>
@@ -995,7 +995,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
       )}
       <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input className="input-field" style={{ maxWidth: 400, borderRadius: 50 }} placeholder="🔍 Search items, brands…" value={searchVal} onChange={e => setSearchVal(e.target.value)} />
+          <input className="input-field" style={{ maxWidth: 400, borderRadius: 50 }} placeholder=" Search items, brands…" value={searchVal} onChange={e => setSearchVal(e.target.value)} />
           <button
             onClick={() => setPage("browse")}
             style={{
@@ -1016,7 +1016,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
           </button>
         </div>
         <button className="btn-secondary" style={{ padding: "10px 20px" }} onClick={() => setShowFilters(!showFilters)}>
-          ⚙️ Filters {showFilters ? "▲" : "▼"}
+           Filters {showFilters ? "▲" : "▼"}
         </button>
         <select className="input-field" style={{ maxWidth: 180 }} value={sortBy} onChange={e => setSortBy(e.target.value)}>
           <option value="newest">Newest first</option>
@@ -1083,7 +1083,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
 
       {searching ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16, animation: "pulse 1.5s infinite" }}>🔍</div>
+          <div style={{ fontSize: 48, marginBottom: 16, animation: "pulse 1.5s infinite" }}></div>
           <div>Searching for items...</div>
         </div>
       ) : loading && searchVal === "" ? (
@@ -1093,7 +1093,7 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
         </div>
       ) : filtered.length === 0 && !searchVal ? (
         <div style={{ textAlign: "center", padding: "80px 0", color: "var(--gray)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🛍️</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}></div>
           <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>No items found</div>
           <div>Try adjusting your filters</div>
         </div>
@@ -1116,7 +1116,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
-  // ✅ FIXED: Get seller info from owner object - avatar comes from database imageUrl
+  //  FIXED: Get seller info from owner object - avatar comes from database imageUrl
   const sellerObj = item?.owner || {};
   const seller = { 
     name: item?.seller || sellerObj?.fullName || "Seller", 
@@ -1196,7 +1196,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
           <div style={{ fontFamily: "var(--font-display)", fontSize: 36, fontWeight: 900, color: "var(--teal-dark)", marginBottom: 24 }}>{item.price} TND</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
-            {[["📏 Size", item.size], ["🏷️ Brand", item.brand], ["✨ Condition", item.condition], ["📍 Location", item.location]].map(([label, val]) => (
+            {[[" Size", item.size], [" Brand", item.brand], [" Condition", item.condition], [" Location", item.location]].map(([label, val]) => (
               <div key={label} style={{ background: "var(--light-gray)", borderRadius: "var(--radius-sm)", padding: "12px 16px" }}>
                 <div style={{ fontSize: 12, color: "var(--gray)", marginBottom: 2 }}>{label}</div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{val}</div>
@@ -1208,7 +1208,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             <>
               <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
                 <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14, background: "linear-gradient(135deg, #ff6b6b, #ee5a24)", opacity: messageSending ? 0.7 : 1 }} onClick={startConversation} disabled={messageSending}>
-                  {messageSending ? "⏳ Opening chat..." : "⚡ Buy Now"}
+                  {messageSending ? "⏳ Opening chat..." : " Buy Now"}
                 </button>
               </div>
               <button onClick={() => {
@@ -1221,15 +1221,15 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
                 color: liked ? "var(--coral)" : "var(--gray)",
                 fontWeight: 600, fontSize: 15, marginBottom: 24, transition: "all 0.2s"
               }}>
-                {liked ? "❤️ Saved to Wishlist" : "🤍 Save to Wishlist"}
+                {liked ? " Saved to Wishlist" : " Save to Wishlist"}
               </button>
               <button className="btn-secondary" style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, opacity: messageSending ? 0.6 : 1, cursor: messageSending ? "not-allowed" : "pointer" }} onClick={startConversation} disabled={messageSending}>
-                {messageSending ? "⏳ Opening chat..." : "💬 Message Seller"}
+                {messageSending ? "⏳ Opening chat..." : " Message Seller"}
               </button>
             </>
           ) : (
             <div style={{ background: "#fff3cd", border: "2px solid #ffc107", padding: "16px", borderRadius: "12px", textAlign: "center", marginBottom: 32, fontWeight: "600", color: "#856404", fontSize: 15 }}>
-              ⚠️ This is your listing.
+               This is your listing.
             </div>
           )}
 
@@ -1238,7 +1238,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             if (!requireLogin("report this listing")) return;
             setShowReportModal(true);
           }} disabled={reportSubmitting}>
-            🚩 Report this Listing
+             Report this Listing
           </button>
 
           {/* Report Modal */}
@@ -1252,7 +1252,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
                 boxShadow: "var(--shadow-lg)", animation: "fadeIn 0.3s ease"
               }}>
                 <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 900, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                  🚩 Report Listing
+                   Report Listing
                 </h2>
                 <p style={{ color: "var(--gray)", marginBottom: 20, fontSize: 14 }}>
                   Please tell us why you're reporting this listing. This helps us maintain a safe marketplace.
@@ -1277,7 +1277,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
                         targetId: item.id,
                         reason: reportReason.trim()
                       });
-                      alert("✅ Report submitted successfully! Thank you for helping keep our community safe.");
+                      alert(" Report submitted successfully! Thank you for helping keep our community safe.");
                       setShowReportModal(false);
                       setReportReason("");
                     } catch (err) {
@@ -1303,7 +1303,7 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             <Avatar src={seller.avatar} size={56} alt={`${seller.name} avatar`} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{seller.name}</div>
-              <div style={{ color: "var(--gray)", fontSize: 13 }}>📍 {seller.location}</div>
+              <div style={{ color: "var(--gray)", fontSize: 13 }}> {seller.location}</div>
             </div>
             <button className="btn-secondary" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => { setSelectedSeller(seller); setPage("seller"); }}>View Profile</button>
           </div>
@@ -1446,7 +1446,7 @@ function SellPage({ setPage, language }) {
         const allListings = await api.fetchListings();
         setListings(Array.isArray(allListings) ? allListings.map(normalizeListingForUi) : []);
 
-        alert("✅ Listing published successfully!");
+        alert(" Listing published successfully!");
         setPage("profile");
       }
     } catch (err) {
@@ -1457,7 +1457,7 @@ function SellPage({ setPage, language }) {
     }
   };
 
-  const steps = ["📸 " + t.addPhotos, "📝 " + t.itemDetails, "💰 " + t.setPrice, "✅ " + t.publishStep];
+  const steps = [" " + t.addPhotos, " " + t.itemDetails, " " + t.setPrice, " " + t.publishStep];
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
@@ -1476,7 +1476,7 @@ function SellPage({ setPage, language }) {
               color: step >= i + 1 ? "white" : "var(--gray)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontWeight: 700, fontSize: 14, transition: "all 0.3s"
-            }}>{step > i + 1 ? "✓" : i + 1}</div>
+            }}>{step > i + 1 ? "" : i + 1}</div>
             <div style={{ fontSize: 12, color: step === i + 1 ? "var(--teal)" : "var(--gray)", fontWeight: step === i + 1 ? 600 : 400 }}>{s}</div>
           </div>
         ))}
@@ -1487,7 +1487,7 @@ function SellPage({ setPage, language }) {
           <div style={{ animation: "slideIn 0.3s ease" }}>
             <h2 style={{ fontWeight: 700, fontSize: 22, marginBottom: 24 }}>Add Photos</h2>
             <div style={{ border: "2px dashed var(--border)", borderRadius: "var(--radius)", padding: "24px", textAlign: "center", background: "var(--light-gray)" }}>
-              <label htmlFor="sell-images" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 8 }}>📸 Upload photos from your device</label>
+              <label htmlFor="sell-images" style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 8 }}> Upload photos from your device</label>
               <input
                 id="sell-images"
                 className="input-field"
@@ -1533,7 +1533,7 @@ function SellPage({ setPage, language }) {
                 </div>
               )}
             </div>
-            <p style={{ color: "var(--gray)", fontSize: 13, marginTop: 16 }}>💡 Tip: Good lighting and multiple angles get 3x more views!</p>
+            <p style={{ color: "var(--gray)", fontSize: 13, marginTop: 16 }}> Tip: Good lighting and multiple angles get 3x more views!</p>
           </div>
         )}
         {step === 2 && (
@@ -1575,7 +1575,7 @@ function SellPage({ setPage, language }) {
             {fieldErrors.price && <div style={{ color: "var(--coral)", fontSize: 14, marginTop: -16, marginBottom: 16 }}>{fieldErrors.price}</div>}
 
             <div style={{ background: "var(--teal-light)", borderRadius: "var(--radius-sm)", padding: 16 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8 }}>💡 Pricing Estimate</div>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}> Pricing Estimate</div>
               {[["Your earnings (after 5% fee)", `${form.price ? Math.round(form.price * 0.95) : "-"} TND`], ["Buyer pays", `${form.price ? Number(form.price) : "-"} TND`]].map(([l, v]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 4 }}>
                   <span style={{ color: "var(--gray)" }}>{l}</span>
@@ -1601,7 +1601,7 @@ function SellPage({ setPage, language }) {
               </div>
             </div>
             <button className="btn-primary" style={{ width: "100%", padding: 16, fontSize: 16, justifyContent: "center", opacity: loading ? 0.6 : 1 }} onClick={handlePublish} disabled={loading}>
-              {loading ? "Publishing..." : "🚀 Publish Listing"}
+              {loading ? "Publishing..." : " Publish Listing"}
             </button>
           </div>
         )}
@@ -1625,7 +1625,7 @@ function WishlistPage({ setPage, setSelectedItem, language }) {
       <p style={{ color: "var(--gray)", marginBottom: 32 }}>{wishlist.length} saved items</p>
       {wishlist.length === 0 ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🤍</div>
+          <div style={{ fontSize: 64, marginBottom: 16 }}></div>
           <h2 style={{ fontWeight: 700, marginBottom: 8 }}>No saved items yet</h2>
           <p style={{ color: "var(--gray)", marginBottom: 24 }}>Tap the heart icon on items you love</p>
           <button className="btn-primary" onClick={() => setPage("browse")}>Discover Items</button>
@@ -1640,7 +1640,7 @@ function WishlistPage({ setPage, setSelectedItem, language }) {
 }
 
 
-// ✅ MessagesPage is now imported from MessagesPage.jsx
+//  MessagesPage is now imported from MessagesPage.jsx
 
 function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [] }) {
   const t = TRANSLATIONS[language];
@@ -1656,7 +1656,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
   });
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
-  // ✅ FIXED: Filter listings to only show current user's listings
+  //  FIXED: Filter listings to only show current user's listings
   const userItems = user && user.id ? listings.filter(l => l.owner?.id === user.id || l.seller?.id === user.id) : [];
   const u = user || { name: "User", avatar: null, location: "Tunisia", bio: "User profile" };
 
@@ -1679,7 +1679,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
         setUser(updatedUser);
         localStorage.setItem('swaptn_user', JSON.stringify(updatedUser));
         setEditMode(false);
-        alert("✅ Profile updated successfully!");
+        alert(" Profile updated successfully!");
       }
     } catch (err) {
       setEditError(err.message || "Failed to update profile");
@@ -1697,7 +1697,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
           <div style={{ position: "relative" }}>
             <Avatar src={u.avatar} size={100} alt={`${u.name} avatar`} style={{ border: "4px solid var(--teal)" }} />
             <div style={{ position: "absolute", bottom: 0, right: 0, background: "var(--teal)", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <span style={{ color: "white", fontSize: 12 }}>✏️</span>
+              <span style={{ color: "white", fontSize: 12 }}></span>
             </div>
           </div>
           <div style={{ flex: 1 }}>
@@ -1705,7 +1705,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
             <p style={{ color: "var(--gray)", marginBottom: 16 }}>{u.bio}</p>
             <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 700, color: "var(--teal-dark)" }}>
-                📍 {u.location || "Tunisia"}
+                 {u.location || "Tunisia"}
               </div>
             </div>
           </div>
@@ -1728,7 +1728,7 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "white", borderRadius: "var(--radius)", padding: 6, boxShadow: "var(--shadow)" }}>
-        {[["listings", "🏷️ My Listings"], ["sold", "✅ Sold"]].map(([key, label]) => (
+        {[["listings", " My Listings"], ["sold", " Sold"]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: "10px 16px", borderRadius: "var(--radius-sm)",
             background: tab === key ? "var(--teal)" : "none",
@@ -1812,11 +1812,11 @@ function SellerPage({ setPage, sellerData, language }) {
             <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 900 }}>{seller.name}</h1>
             <p style={{ color: "var(--gray)", margin: "6px 0 12px" }}>{seller.bio}</p>
             <div style={{ display: "flex", gap: 20 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--teal-dark)" }}>📍 {seller.location || "Tunisia"}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--teal-dark)" }}> {seller.location || "Tunisia"}</span>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-primary" onClick={() => setPage("messages")}>💬 Message</button>
+            <button className="btn-primary" onClick={() => setPage("messages")}> Message</button>
           </div>
         </div>
 
@@ -1842,7 +1842,7 @@ function SellerPage({ setPage, sellerData, language }) {
               onClick={() => setShowReportModal(true)}
               disabled={reportSubmitting}
             >
-              🚩 Report this Profile
+               Report this Profile
             </button>
           </div>
         )}
@@ -1858,7 +1858,7 @@ function SellerPage({ setPage, sellerData, language }) {
             boxShadow: "var(--shadow-lg)", animation: "fadeIn 0.3s ease"
           }}>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 900, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              🚩 Report Profile
+               Report Profile
             </h2>
             <p style={{ color: "var(--gray)", marginBottom: 20, fontSize: 14 }}>
               Tell us why this profile should be checked by our moderation team.
@@ -1904,7 +1904,7 @@ function SellerPage({ setPage, sellerData, language }) {
                       targetId: seller.id,
                       reason: reportReason.trim()
                     });
-                    alert("✅ Profile report submitted successfully.");
+                    alert(" Profile report submitted successfully.");
                     setShowReportModal(false);
                     setReportReason("");
                   } catch (err) {
@@ -2040,9 +2040,9 @@ function LoginPage({ setPage, language }) {
           </div>
 
           <ul className="auth-feature-list">
-            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Instant conversations with buyers and sellers</li>
-            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Secure account and profile management</li>
-            <li className="auth-feature-item"><span className="auth-feature-dot">✓</span> Faster listing flow to publish in minutes</li>
+            <li className="auth-feature-item"><span className="auth-feature-dot"></span> Instant conversations with buyers and sellers</li>
+            <li className="auth-feature-item"><span className="auth-feature-dot"></span> Secure account and profile management</li>
+            <li className="auth-feature-item"><span className="auth-feature-dot"></span> Faster listing flow to publish in minutes</li>
           </ul>
         </section>
 
@@ -2084,7 +2084,7 @@ function LoginPage({ setPage, language }) {
           </div>
 
           <div className="card" style={{ padding: 30, borderRadius: 22, border: "1px solid #d7e5f2", boxShadow: "0 16px 35px rgba(12, 35, 67, 0.12)", background: "rgba(255,255,255,0.96)" }}>
-            {notice && <div style={{ background: "#fff6e6", border: "1px solid #f5c87a", color: "#9a5b00", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 600, textAlign: "center" }}>🔒 {notice}</div>}
+            {notice && <div style={{ background: "#fff6e6", border: "1px solid #f5c87a", color: "#9a5b00", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 600, textAlign: "center" }}> {notice}</div>}
             {error && <div style={{ background: "#fff0f0", border: "1px solid var(--coral)", color: "var(--coral)", padding: 12, borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 14, fontWeight: 500, textAlign: "center" }}>{error}</div>}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -3544,7 +3544,7 @@ export function SafeBuyingPage({ setPage }) {
       label: "Verify Sellers",
       icon: Icon.shield,
       items: [
-        "Look for the ✓ Verified badge next to seller names",
+        "Look for the  Verified badge next to seller names",
         "Check ratings and feedback from previous buyers",
         "New sellers: start with purchases under 100 TND first",
         "Avoid sellers with multiple complaints about authenticity",
@@ -3840,7 +3840,7 @@ export default function App() {
         setListings(normalized);
       } catch (err) {
         console.error("Failed to fetch listings:", err);
-        setListingError(err.message || "⚠️ Failed to load items. Please refresh the page.");
+        setListingError(err.message || " Failed to load items. Please refresh the page.");
         setListings([]);
       } finally {
         setLoading(false);
@@ -3913,3 +3913,4 @@ export default function App() {
     </AppContext.Provider>
   );
 }
+

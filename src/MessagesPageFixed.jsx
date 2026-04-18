@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import * as api from "./api";
 
 const formatTime = (dateString) => {
@@ -85,7 +85,7 @@ function Avatar({ src, size = 40, alt = "Avatar", style = {} }) {
       fontWeight: 700,
       border: style.border || "1px solid var(--border)"
     }}>
-      <span style={{ lineHeight: 1 }}>👤</span>
+      <span style={{ lineHeight: 1 }}></span>
     </div>
   );
 }
@@ -99,6 +99,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
   const [messages, setMessages] = useState({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
@@ -226,6 +227,27 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
     }
   };
 
+  const deleteMsg = async (messageId) => {
+    if (!activeChat?.id || !messageId) return;
+
+    const confirmed = window.confirm("Delete this message?");
+    if (!confirmed) return;
+
+    setDeletingMessageId(messageId);
+    try {
+      await api.deleteMessage(messageId);
+      setMessages((m) => ({
+        ...m,
+        [activeChat.id]: (m[activeChat.id] || []).filter((msg) => String(msg.id) !== String(messageId))
+      }));
+    } catch (err) {
+      console.error("Failed to delete message:", err);
+      alert(err.message || "Failed to delete message");
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
   const activeMessages = activeChat?.id ? (messages[activeChat.id] || []) : [];
 
   useEffect(() => {
@@ -239,7 +261,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
       <h1 className="page-header">Messages</h1>
       {!user ? (
         <div style={{ background: "white", borderRadius: "var(--radius)", padding: 40, textAlign: "center", boxShadow: "var(--shadow)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}></div>
           <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Sign in to view messages</div>
           <div style={{ color: "var(--gray)", marginBottom: 24 }}>You need to be logged in to access your conversations</div>
         </div>
@@ -249,7 +271,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
         </div>
       ) : userMessages.length === 0 ? (
         <div style={{ background: "white", borderRadius: "var(--radius)", padding: 40, textAlign: "center", boxShadow: "var(--shadow)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}></div>
           <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No conversations yet</div>
           <div style={{ color: "var(--gray)" }}>Start a conversation by messaging a seller</div>
         </div>
@@ -321,7 +343,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
                       opacity: reportSubmitting ? 0.7 : 1
                     }}
                   >
-                    🚩 Report Conversation
+                     Report Conversation
                   </button>
                 </div>
                 <div style={{ 
@@ -335,16 +357,37 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
                 }} className="messages-container">
                   {activeMessages.length === 0 ? (
                     <div style={{ textAlign: "center", color: "var(--gray)", padding: "40px 20px" }}>
-                      <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
+                      <div style={{ fontSize: 48, marginBottom: 12 }}></div>
                       <div>Start a conversation!</div>
                     </div>
                   ) : (
                     activeMessages.map((msg, i) => {
                       const isFromMe = String(msg.senderId) === String(user?.id);
                       const senderName = isFromMe ? "You" : (activeChat.otherUser?.fullName || "User");
+                      const isDeleting = String(deletingMessageId) === String(msg.id);
                       return (
-                        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: isFromMe ? "flex-end" : "flex-start", gap: 4 }}>
-                          <div style={{ fontSize: 11, color: "var(--gray)", fontWeight: 500 }}>{senderName}</div>
+                        <div key={msg.id ?? i} style={{ display: "flex", flexDirection: "column", alignItems: isFromMe ? "flex-end" : "flex-start", gap: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ fontSize: 11, color: "var(--gray)", fontWeight: 500 }}>{senderName}</div>
+                            {isFromMe && msg.id && (
+                              <button
+                                onClick={() => deleteMsg(msg.id)}
+                                disabled={isDeleting}
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  color: "#dc2626",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: isDeleting ? "not-allowed" : "pointer",
+                                  opacity: isDeleting ? 0.6 : 1,
+                                  padding: 0
+                                }}
+                              >
+                                {isDeleting ? "Deleting..." : "Delete"}
+                              </button>
+                            )}
+                          </div>
                           <div style={{
                             maxWidth: "78%",
                             padding: "11px 16px",
@@ -391,7 +434,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
                       width: "100%",
                       boxShadow: "0 12px 48px rgba(0,0,0,0.15)"
                     }}>
-                      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>🚩 Report Conversation</h2>
+                      <h2 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}> Report Conversation</h2>
                       <p style={{ color: "var(--gray)", marginBottom: 14, fontSize: 14 }}>
                         Explain why this conversation should be reviewed.
                       </p>
@@ -462,3 +505,4 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
     </div>
   );
 }
+
