@@ -1232,11 +1232,6 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
 
           {(!user || user.id !== seller.id) ? (
             <>
-              <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-                <button className="btn-primary" style={{ flex: 1, justifyContent: "center", padding: 14, background: "linear-gradient(135deg, #ff6b6b, #ee5a24)", opacity: messageSending ? 0.7 : 1 }} onClick={startConversation} disabled={messageSending}>
-                  {messageSending ? "⏳ Opening chat..." : " Buy Now"}
-                </button>
-              </div>
               <button onClick={() => {
                 if (!requireLogin("save this listing to your wishlist")) return;
                 setLiked(!liked);
@@ -1259,13 +1254,15 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
             </div>
           )}
 
-          {/* Report Button */}
-          <button style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, background: "#fff", color: "#dc2626", border: "2px solid #fecaca", borderRadius: 50, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "all 0.2s", opacity: reportSubmitting ? 0.6 : 1 }} onClick={() => {
-            if (!requireLogin("report this listing")) return;
-            setShowReportModal(true);
-          }} disabled={reportSubmitting}>
-             Report this Listing
-          </button>
+          {/* Report Button - Only show if not the seller */}
+          {(!user || user.id !== seller.id) && (
+            <button style={{ width: "100%", padding: 12, marginBottom: 32, justifyContent: "center", display: "flex", gap: 8, background: "#fff", color: "#dc2626", border: "2px solid #fecaca", borderRadius: 50, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "all 0.2s", opacity: reportSubmitting ? 0.6 : 1 }} onClick={() => {
+              if (!requireLogin("report this listing")) return;
+              setShowReportModal(true);
+            }} disabled={reportSubmitting}>
+               Report this Listing
+            </button>
+          )}
 
           {/* Report Modal */}
           {showReportModal && (
