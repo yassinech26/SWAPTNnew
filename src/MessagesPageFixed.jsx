@@ -149,6 +149,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
         setLoading(false);
       }
     };
+    
     loadConversations();
   }, [user?.id]);
 
@@ -185,7 +186,14 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
         setMessages(m => ({ ...m, [activeChat.id]: [] }));
       }
     };
+    
+    // Load messages immediately
     loadMessages();
+    
+    // Poll for new messages every 2 seconds (real-time effect)
+    const pollInterval = setInterval(loadMessages, 2000);
+    
+    return () => clearInterval(pollInterval);
   }, [activeChat?.id, user?.id]);
 
   const sendMsg = async () => {
