@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,10 @@ public class ListingService {
 
     public List<Listing> getAllListings() {
         return listingRepository.findByStatus(ListingStatus.ACTIVE);
+    }
+
+    public Page<Listing> getAllListingsPaginated(Pageable pageable) {
+        return listingRepository.findByStatus(ListingStatus.ACTIVE, pageable);
     }
 
     public List<Listing> getAllListingsForAdmin() {

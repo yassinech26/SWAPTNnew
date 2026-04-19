@@ -1,4 +1,8 @@
-﻿import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+﻿// ─── SWAPTN MAIN APPLICATION ───────────────────────────────────────────────────────
+// Central React component managing all pages, state, and UI logic
+// Features: Browse listings with pagination, create/edit listings, messaging, user auth
+// Backend: Spring Boot API on http://localhost:8081 with Neon PostgreSQL database
+import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import * as api from "./api";
 import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
 import { ProtectedAdminRoute } from "./ProtectedAdminRoute";
@@ -916,7 +920,7 @@ function HomePage({ setPage, setSelectedItem, language }) {
   );
 }
 
-function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false, searchVal = "", setSearchVal }) {
+function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false, searchVal = "", setSearchVal, hasMore = true, setCurrentPage }) {
   const t = TRANSLATIONS[language];
   const { listingError } = useApp();
   const [activeCategory, setActiveCategory] = useState(selectedCategory || "All");
@@ -975,6 +979,8 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
     
     return matchesCategory && matchesPrice && matchesCondition && matchesSize && matchesLocation && matchesBrand;
   });
+
+
 
   // Sort
   if (sortBy === "price-asc") filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -1098,8 +1104,28 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
           <div>Try adjusting your filters</div>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-          {filtered.map(item => <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />)}
+        <div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
+            {filtered.map(item => <ItemCard key={item.id} item={item} onClick={() => { setSelectedItem(item); setPage("item"); }} />)}
+          </div>
+          {filtered.length > 0 && searchVal === "" && (
+            <div style={{ textAlign: "center", marginTop: 40, paddingBottom: 40 }}>
+              {hasMore ? (
+                <button 
+                  className="btn-primary" 
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  style={{ padding: "12px 40px", fontSize: 16 }}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Load More Items"}
+                </button>
+              ) : (
+                <div style={{ color: "var(--gray)", fontSize: 14 }}>
+                  No more items to load
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1443,9 +1469,10 @@ function SellPage({ setPage, language }) {
       const result = await api.createListing(listingData, selectedImages);
 
       if (result?.id) {
-        const allListings = await api.fetchListings();
-        setListings(Array.isArray(allListings) ? allListings.map(normalizeListingForUi) : []);
-
+        // Add the new listing to the top of the list immediately (no page reload needed)
+        const normalizedNewListing = normalizeListingForUi(result);
+        setListings(prev => [normalizedNewListing, ...prev]);
+        
         alert(" Listing published successfully!");
         setPage("profile");
       }
@@ -3794,6 +3821,9 @@ export default function App() {
   const [listingError, setListingError] = useState("");
   const [loginNotice, setLoginNotice] = useState("");
   const [conversationFocus, setConversationFocus] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   const setPage = (nextPage) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3835,19 +3865,56 @@ export default function App() {
       try {
         setLoading(true);
         setListingError("");
-        const data = await api.fetchListings();
-        const normalized = Array.isArray(data) ? data.map(normalizeListingForUi) : [];
-        setListings(normalized);
+        const pageNum = currentPage === 0 ? 0 : currentPage;
+        const data = await api.fetchListings(pageNum, 12);
+        
+        // Handle Spring Data Page format
+        let content = [];
+        if (data && typeof data === 'object') {
+          // If it's a Page object with content property
+          if (Array.isArray(data.content)) {
+            content = data.content;
+          }
+          // If it's directly an array
+          else if (Array.isArray(data)) {
+            content = data;
+          }
+          // Fallback: try to get content from data
+          else {
+            console.warn("[LISTINGS] Unexpected data format:", data);
+            content = [];
+          }
+        }
+        
+        const normalized = Array.isArray(content) ? content.map(normalizeListingForUi) : [];
+        
+        if (currentPage === 0) {
+          setListings(normalized);
+        } else {
+          setListings(prev => [...prev, ...normalized]);
+        }
+        
+        // Update pagination info from Page object
+        if (data && data.totalPages !== undefined) {
+          setTotalPages(data.totalPages);
+          setHasMore(pageNum < data.totalPages - 1);
+        } else {
+          // If no pagination info, assume we have all data
+          setTotalPages(1);
+          setHasMore(false);
+        }
       } catch (err) {
         console.error("Failed to fetch listings:", err);
-        setListingError(err.message || " Failed to load items. Please refresh the page.");
-        setListings([]);
+        if (currentPage === 0) {
+          setListingError(err.message || " Failed to load items. Please refresh the page.");
+          setListings([]);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchListingData();
-  }, []);
+  }, [currentPage]);
 
   const ctx = { 
     wishlist, setWishlist, 
@@ -3863,13 +3930,17 @@ export default function App() {
     setPage,
     setSelectedItem,
     setSelectedSeller,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    hasMore,
     t: TRANSLATIONS[language]
   };
 
   const renderPage = () => {
     switch (page) {
       case "home": return <HomePage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;
-      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} listings={listings} loading={loading} searchVal={searchVal} setSearchVal={setSearchVal} />;
+      case "browse": return <BrowsePage setPage={setPage} setSelectedItem={setSelectedItem} selectedCategory={selectedCategory} language={language} listings={listings} loading={loading} searchVal={searchVal} setSearchVal={setSearchVal} hasMore={hasMore} setCurrentPage={setCurrentPage} />;
       case "item": return <ItemPage item={selectedItem} setPage={setPage} setSelectedSeller={setSelectedSeller} language={language} />;
       case "sell": return <SellPage setPage={setPage} language={language} />;
       case "wishlist": return <WishlistPage setPage={setPage} setSelectedItem={setSelectedItem} language={language} />;

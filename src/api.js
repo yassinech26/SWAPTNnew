@@ -1,6 +1,7 @@
 // ─── API SERVICE LAYER ──────────────────────────────────────────────────────
-// Centralized API calls for SwapTN frontend → Spring Boot backend
-// Backend runs on http://localhost:8081
+// Centralized API client for all backend communication with Spring Boot
+// Handles authentication, pagination, CRUD operations, and error handling
+// Backend runs on http://localhost:8081 with Neon PostgreSQL database
 
 // Use full URL for CORS-enabled backend, or relative URL for proxy
 const API_BASE = process.env.NODE_ENV === 'development' 
@@ -172,8 +173,8 @@ export async function deactivateAdminListing(id) {
 
 // ─── LISTINGS ─────────────────────────────────────────────────────────────────
 
-export async function fetchListings() {
-  return request('/api/listings');
+export async function fetchListings(page = 0, size = 12, sortBy = "createdAt") {
+  return request(`/api/listings?page=${page}&size=${size}&sortBy=${sortBy}`);
 }
 
 export async function fetchListingById(id) {

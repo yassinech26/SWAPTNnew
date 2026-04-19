@@ -3,6 +3,8 @@ package com.cherifyedeshemdenebenhamed.demo.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +14,7 @@ import com.cherifyedeshemdenebenhamed.demo.model.Listing.ListingStatus;
 @Repository
 public interface ListingRepository extends JpaRepository<Listing, Long> {
     List<Listing> findByStatus(ListingStatus status);
+    Page<Listing> findByStatus(ListingStatus status, Pageable pageable);
     Optional<Listing> findByIdAndStatus(Long id, ListingStatus status);
     List<Listing> findByStatusAndTitleContaining(ListingStatus status, String title);
     List<Listing> findByStatusAndCategory(ListingStatus status, String category);

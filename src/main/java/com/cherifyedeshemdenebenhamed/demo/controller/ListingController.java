@@ -3,6 +3,10 @@ package com.cherifyedeshemdenebenhamed.demo.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -45,12 +49,33 @@ public class ListingController {
     private UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<Listing>> getAllListings() {
-        List<Listing> listings = listingService.getAllListings();
-        if (listings == null || listings.isEmpty()) {
-            throw new NotFoundException(" No items available right now. Check back soon!");
+    public ResponseEntity<Page<Listing>> getAllListings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy) {
+        try {
+            // Whitelist valid sort fields to prevent injection
+            String validSortField;
+            switch (sortBy.toLowerCase()) {
+                case "price": validSortField = "price"; break;
+                case "title": validSortField = "title"; break;
+                case "createdat":
+                case "created_at": validSortField = "createdAt"; break;
+                default: validSortField = "createdAt"; // default to createdAt
+            }
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by(validSortField).descending());
+            Page<Listing> listings = listingService.getAllListingsPaginated(pageable);
+            // Page object is never null, but check if content is empty
+            if (listings.getContent().isEmpty() && page == 0) {
+                throw new NotFoundException(" No items available right now. Check back soon!");
+            }
+            return ResponseEntity.ok(listings);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid pagination parameters: page and size must be >= 0");
+        } catch (Exception e) {
+            throw new BadRequestException("Error fetching listings: " + e.getMessage());
         }
-        return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{id}")
