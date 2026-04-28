@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +43,7 @@ public class ReportController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ReportDTO createReport(@RequestBody Report report) {
+    public ReportDTO createReport(@Valid @RequestBody Report report) {
         if (report.getType() == null || report.getReason() == null || report.getReason().trim().isEmpty()) {
             throw new BadRequestException("Le type ou la raison du signalement ne peuvent pas être vides");
         }

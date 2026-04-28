@@ -1,6 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.exception;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -8,10 +9,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // 1) Gestion de vos exceptions personnalisées (BadRequest, NotFound, Forbidden)
     @ExceptionHandler(BadRequestException.class)
@@ -78,11 +81,15 @@ public class GlobalExceptionHandler {
     // 4) Capture de toutes les autres erreurs imprévues (Server Error)
 @ExceptionHandler(Exception.class)
 public ResponseEntity<ErrorResponse> handleAny(Exception ex, HttpServletRequest request) {
+    // Log the actual exception for debugging
+    logger.error("Unexpected error occurred: ", ex);
+    
     ErrorResponse error = new ErrorResponse(
             LocalDateTime.now(),
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
-            "Une erreur interne est survenue sur le serveur",
+            ex.getMessage() != null ? ex.getMessage() : "Une erreur interne est survenue sur le serveur",
             request.getRequestURI()
     );
     return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-}}
+}
+}

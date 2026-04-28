@@ -1,15 +1,39 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Listing;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
+import com.cherifyedeshemdenebenhamed.demo.service.ListingImageStorageService;
 import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -18,46 +42,87 @@ public class ListingController {
     @Autowired
     private ListingService listingService;
 
+    @Autowired
+    private ListingImageStorageService listingImageStorageService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
-    public ResponseEntity<List<Listing>> getAllListings() {
-        List<Listing> listings = listingService.getAllListings();
-        if (listings == null || listings.isEmpty()) {
-            throw new NotFoundException("No listings found");
+    public ResponseEntity<Page<Listing>> getAllListings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy) {
+        try {
+            // Whitelist valid sort fields to prevent injection
+            String validSortField;
+            switch (sortBy.toLowerCase()) {
+                case "price": validSortField = "price"; break;
+                case "title": validSortField = "title"; break;
+                case "createdat":
+                case "created_at": validSortField = "createdAt"; break;
+                default: validSortField = "createdAt"; // default to createdAt
+            }
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by(validSortField).descending());
+            Page<Listing> listings = listingService.getAllListingsPaginated(pageable);
+            // Page object is never null, but check if content is empty
+            if (listings.getContent().isEmpty() && page == 0) {
+                throw new NotFoundException(" No items available right now. Check back soon!");
+            }
+            return ResponseEntity.ok(listings);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid pagination parameters: page and size must be >= 0");
+        } catch (Exception e) {
+            throw new BadRequestException("Error fetching listings: " + e.getMessage());
         }
-        return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Listing> getListingById(@PathVariable Long id) {
         if (id == null || id <= 0) {
-            throw new BadRequestException("Invalid listing ID");
+            throw new BadRequestException(" Invalid item ID. Please check the link and try again.");
         }
-        Listing listing = listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found"));
+        Listing listing = listingService.getActiveListingById(id)
+                .orElseThrow(() -> new NotFoundException(" This item is no longer available. It may have been sold or removed."));
         return ResponseEntity.ok(listing);
     }
 
-    @PostMapping
-    public ResponseEntity<Listing> createListing(@RequestBody Listing listing) {
-        if (listing.getTitle() == null || listing.getTitle().trim().isEmpty()) {
-            throw new BadRequestException("Listing title cannot be empty");
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Listing> createListing(
+            @Valid @RequestPart("listing") Listing listing,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+
+        if (images == null || images.isEmpty()) {
+            throw new BadRequestException("Please upload at least one image.");
         }
-        if (listing.getPrice() == null || listing.getPrice() < 0) {
-            throw new BadRequestException("Listing price must be a positive value");
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User authUser = (User) authentication.getPrincipal();
+            Long authUserId = authUser.getId();
+            if (authUserId == null) {
+                throw new BadRequestException("Invalid authenticated user context");
+            }
+            // Fetch the user from database to ensure it's properly attached to the session
+            User currentUser = userRepository.findById(authUserId)
+                    .orElseThrow(() -> new BadRequestException("User not found"));
+            listing.setOwner(currentUser);
+        } else {
+            throw new BadRequestException("Authentication required to create a listing");
         }
+
+        List<String> storedImageUrls = listingImageStorageService.storeListingImages(images);
+        listing.setImageUrls(storedImageUrls);
+        listing.setImageUrl(storedImageUrls.get(0));
+
         return ResponseEntity.status(HttpStatus.CREATED).body(listingService.saveListing(listing));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Listing> updateListing(@PathVariable Long id, @RequestBody Listing listingDetails) {
-        if (id == null || id <= 0) {
-            throw new BadRequestException("Invalid listing ID");
-        }
-        if (listingDetails.getTitle() == null || listingDetails.getTitle().trim().isEmpty()) {
-            throw new BadRequestException("Listing title cannot be empty");
-        }
+    public ResponseEntity<Listing> updateListing(@PathVariable @NonNull Long id, @Valid @RequestBody Listing listingDetails) {
         Listing existingListing = listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found"));
+                .orElseThrow(() -> new NotFoundException("This item no longer exists or was removed."));
 
         existingListing.setTitle(listingDetails.getTitle());
         existingListing.setDescription(listingDetails.getDescription());
@@ -71,10 +136,10 @@ public class ListingController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteListing(@PathVariable Long id) {
         if (id == null || id <= 0) {
-            throw new BadRequestException("Invalid listing ID");
+            throw new BadRequestException("Invalid item ID. Cannot delete this item.");
         }
         listingService.getListingById(id)
-                .orElseThrow(() -> new NotFoundException("Listing not found"));
+                .orElseThrow(() -> new NotFoundException("This item no longer exists. It may have been already deleted."));
         listingService.deleteListing(id);
         return ResponseEntity.ok().build();
     }
@@ -82,11 +147,11 @@ public class ListingController {
     @GetMapping("/search")
     public ResponseEntity<List<Listing>> searchListings(@RequestParam String title) {
         if (title == null || title.trim().isEmpty()) {
-            throw new BadRequestException("Search title cannot be empty");
+            throw new BadRequestException("Please enter a search term (brand or item name)");
         }
         List<Listing> listings = listingService.searchByTitle(title);
         if (listings == null || listings.isEmpty()) {
-            throw new NotFoundException("No listings found matching title: " + title);
+            throw new NotFoundException("No items found for '" + title + "'. Try different keywords or browse all items.");
         }
         return ResponseEntity.ok(listings);
     }
@@ -94,11 +159,11 @@ public class ListingController {
     @GetMapping("/category/{category}")
     public ResponseEntity<List<Listing>> filterByCategory(@PathVariable String category) {
         if (category == null || category.trim().isEmpty()) {
-            throw new BadRequestException("Category cannot be empty");
+            throw new BadRequestException(" Category name is required to filter items");
         }
         List<Listing> listings = listingService.filterByCategory(category);
         if (listings == null || listings.isEmpty()) {
-            throw new NotFoundException("No listings found in category: " + category);
+            throw new NotFoundException(" No items in the '" + category + "' category yet. Check back soon!");
         }
         return ResponseEntity.ok(listings);
     }
@@ -106,11 +171,11 @@ public class ListingController {
     @GetMapping("/price")
     public ResponseEntity<List<Listing>> filterByPrice(@RequestParam Double min, @RequestParam Double max) {
         if (min == null || max == null || min > max || min < 0) {
-            throw new BadRequestException("Invalid price range provided");
+            throw new BadRequestException(" Invalid price range. Ensure minimum is less than maximum and both are positive.");
         }
         List<Listing> listings = listingService.filterByPrice(min, max);
         if (listings == null || listings.isEmpty()) {
-            throw new NotFoundException("No listings found in the specified price range");
+            throw new NotFoundException(" No items found in the price range " + min + " - " + max + " TND. Try a wider price range.");
         }
         return ResponseEntity.ok(listings);
     }

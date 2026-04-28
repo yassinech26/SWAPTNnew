@@ -1,18 +1,22 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import com.cherifyedeshemdenebenhamed.demo.model.Message;
-import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
-import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
-import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
-import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
-import com.cherifyedeshemdenebenhamed.demo.model.User;
-import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
-import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
+import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
+import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
+import com.cherifyedeshemdenebenhamed.demo.model.Conversation;
+import com.cherifyedeshemdenebenhamed.demo.model.Message;
+import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
 
 @Service
 public class MessageService {
@@ -22,6 +26,9 @@ public class MessageService {
 
     @Autowired
     private ConversationRepository conversationRepository;
+
+    @Autowired
+    private ReportRepository reportRepository;
 
     // Méthode pour envoyer un message
     public Message sendMessage(Long conversationId, User sender, String content) {
@@ -81,4 +88,38 @@ public class MessageService {
     // Retourner les messages triés par timestamp
     return messageRepository.findByConversationOrderByTimestampAsc(conversation);
 }
+
+    @Transactional
+    public void deleteMessage(Long messageId, Long currentUserId) {
+        if (messageId == null || messageId <= 0) {
+            throw new BadRequestException("messageId is required");
+        }
+
+        if (currentUserId == null) {
+            throw new BadRequestException("currentUserId is required");
+        }
+
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new NotFoundException("Message not found"));
+
+        Conversation conversation = message.getConversation();
+        if (conversation == null) {
+            throw new NotFoundException("Conversation not found");
+        }
+
+        boolean isParticipant =
+                conversation.getUser1().getId().equals(currentUserId) ||
+                conversation.getUser2().getId().equals(currentUserId);
+
+        if (!isParticipant) {
+            throw new ForbiddenException("You are not authorized to access this message");
+        }
+
+        if (!message.getSender().getId().equals(currentUserId)) {
+            throw new ForbiddenException("You can only delete your own messages");
+        }
+
+        reportRepository.deleteByTypeAndTargetId(ReportType.MESSAGE, messageId);
+        messageRepository.delete(message);
+    }
 }
