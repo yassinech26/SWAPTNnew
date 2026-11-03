@@ -1,23 +1,21 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
-import com.cherifyedeshemdenebenhamed.demo.model.Review;
-import com.cherifyedeshemdenebenhamed.demo.service.ReviewService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
-import org.springframework.web.bind.annotation.*;
-
+import com.cherifyedeshemdenebenhamed.demo.model.Review;
+import com.cherifyedeshemdenebenhamed.demo.service.ReviewService;
 import jakarta.validation.Valid;
 import java.util.List;
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/reviews")
+@RequiredArgsConstructor
 public class ReviewController {
 
-    @Autowired
-    private ReviewService reviewService;
+    private final ReviewService reviewService;
 
     @GetMapping
     public ResponseEntity<List<Review>> getAllReviews() {

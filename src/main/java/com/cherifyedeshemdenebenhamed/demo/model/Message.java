@@ -2,9 +2,11 @@ package com.cherifyedeshemdenebenhamed.demo.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
-
+import lombok.Getter;
+import lombok.Setter;
 @Entity
+@Getter
+@Setter
 public class Message {
 
     @Id
@@ -12,57 +14,21 @@ public class Message {
     private Long id;
 
     @Column(nullable = false)
+    private boolean isRead = false;
+
+    @Column(nullable = false, length = 1000)
     private String content;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
     private User sender;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "conversation_id", referencedColumnName = "id", nullable = false)
     private Conversation conversation;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public User getSender() {
-        return sender;
-    }
-
-    public void setSender(User sender) {
-        this.sender = sender;
-    }
-
-    public Conversation getConversation() {
-        return conversation;
-    }
-
-    public void setConversation(Conversation conversation) {
-        this.conversation = conversation;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
 }

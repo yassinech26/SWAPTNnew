@@ -2,6 +2,8 @@ package com.cherifyedeshemdenebenhamed.demo.dto;
 
 import java.time.Instant;
 
+@lombok.Getter
+@lombok.Setter
 public class ConversationResponse {
     private Long id;
     private Long listingId;
@@ -21,11 +23,7 @@ public class ConversationResponse {
         this.createdAt = createdAt;
     }
 
-    public Long getId() { return id; }
-    public Long getListingId() { return listingId; }
-    public String getListingName() { return listingName; }
-    public Long getUser1Id() { return user1Id; }
-    public Long getUser2Id() { return user2Id; }
-    public UserResponse getOtherUser() { return otherUser; }
-    public Instant getCreatedAt() { return createdAt; }
+public Long getListingId() { return listingId; }
+public Long getUser1Id() { return user1Id; }
+public UserResponse getOtherUser() { return otherUser; }
 }

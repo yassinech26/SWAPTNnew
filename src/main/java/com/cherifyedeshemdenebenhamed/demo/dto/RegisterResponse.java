@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
+@lombok.Getter
+@lombok.Setter
 public class RegisterResponse {
     private Long id;
     private String fullName;
@@ -11,7 +13,5 @@ public class RegisterResponse {
         this.email = email;
     }
 
-    public Long getId() { return id; }
-    public String getFullname() { return fullName; }
-    public String getEmail() { return email; }
+public String getFullname() { return fullName; }
 }

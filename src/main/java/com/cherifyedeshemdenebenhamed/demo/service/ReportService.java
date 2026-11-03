@@ -1,34 +1,59 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
-
 import com.cherifyedeshemdenebenhamed.demo.dto.ReportDTO;
+import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
 import com.cherifyedeshemdenebenhamed.demo.model.Report;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportStatus;
 import com.cherifyedeshemdenebenhamed.demo.model.ReportType;
 import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.ListingRepository;
+import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
-
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class ReportService {
 
     private final ReportRepository reportRepository;
 
-    @Autowired
-    public ReportService(ReportRepository reportRepository) {
-        this.reportRepository = reportRepository;
-    }
+    private final UserRepository userRepository;
+    private final ListingRepository listingRepository;
+    private final MessageRepository messageRepository;
+    private final ConversationRepository conversationRepository;
+
 
     @SuppressWarnings("null")
     public ReportDTO createReport(Report report) {
+        if (report.getTargetId() == null || report.getTargetId() <= 0) {
+            throw new BadRequestException("targetId is required");
+        }
+        report.setId(null);
+        report.setStatus(ReportStatus.PENDING);
+        report.setCreatedAt(LocalDateTime.now());
+        report.setListing(null);
+        report.setReportedUser(null);
+        switch (report.getType()) {
+            case LISTING -> report.setListing(listingRepository.findById(report.getTargetId()).orElseThrow(() -> new NotFoundException("Listing not found")));
+            case USER -> report.setReportedUser(userRepository.findById(report.getTargetId()).orElseThrow(() -> new NotFoundException("User not found")));
+            case MESSAGE -> {
+                if (!messageRepository.existsById(report.getTargetId())) throw new NotFoundException("Message not found");
+            }
+            case CONVERSATION -> {
+                if (!conversationRepository.existsById(report.getTargetId())) throw new NotFoundException("Conversation not found");
+            }
+        }
         Report savedReport = Objects.requireNonNull(reportRepository.save(report));
         return mapToDTO(savedReport);
     }

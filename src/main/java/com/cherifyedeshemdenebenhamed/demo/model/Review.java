@@ -1,10 +1,5 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,9 +12,14 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 @Entity
 @Table(name = "reviews")
+@Getter
+@Setter
 public class Review {
 
     @Id
@@ -35,63 +35,20 @@ public class Review {
     @Size(max = 500, message = "Comment too long")
     private String comment;
 
-    @ManyToOne
-    @JoinColumn(name = "reviewer_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "reviewer_id", nullable = false)
     private User reviewer;
 
-    @ManyToOne
-    @JoinColumn(name = "reviewed_user_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "reviewed_user_id", nullable = false)
     private User reviewedUser;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "listing_id", nullable = false)
+    private Listing listing;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Integer getRating() {
-        return rating;
-    }
-
-    public void setRating(Integer rating) {
-        this.rating = rating;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public User getReviewer() {
-        return reviewer;
-    }
-
-    public void setReviewer(User reviewer) {
-        this.reviewer = reviewer;
-    }
-
-    public User getReviewedUser() {
-        return reviewedUser;
-    }
-
-    public void setReviewedUser(User reviewedUser) {
-        this.reviewedUser = reviewedUser;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
 }

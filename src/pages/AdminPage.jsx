@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as api from "../api";
-import { useApp } from "../App";
+import { useApp } from "../AppContext";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');

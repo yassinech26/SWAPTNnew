@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
+@lombok.Getter
+@lombok.Setter
 public class LoginResponse {
 
     private String message;
@@ -20,11 +22,7 @@ public class LoginResponse {
         this.role = role;
     }
 
-    public String getMessage() { return message; }
-    public String getToken() { return token; }
-    public Long getId() { return id; }
-    public String getFullName() { return fullName; }
-    public String getEmail() { return email; }
-    public String getImageUrl() { return imageUrl; }
-    public String getRole() { return role; }
+public String getToken() { return token; }
+public String getFullName() { return fullName; }
+public String getImageUrl() { return imageUrl; }
 }   /* Returns user details along with JWT token after login */

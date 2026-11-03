@@ -1,13 +1,21 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
 import java.time.Instant;
-
+import java.util.ArrayList;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 @Entity
 @Table(
     name = "conversations",
     uniqueConstraints = @UniqueConstraint(columnNames = {"listing_id", "user1_id", "user2_id"})
 )
+@Getter
+@Setter
 public class Conversation {
 
     @Id
@@ -23,9 +31,12 @@ public class Conversation {
     @JoinColumn(name = "user2_id")
     private User user2;
 
-    // Si vous avez déjà une entité Listing, remplace Long par Listing (ManyToOne)
-    @Column(name = "listing_id", nullable = false)
-    private Long listingId;
+    @JsonIgnore
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "listing_id", nullable = false)
+    private Listing listing;
+
+    public Long getListingId() { return listing == null ? null : listing.getId(); }
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -35,39 +46,9 @@ public class Conversation {
         this.createdAt = Instant.now();
     }
 
-    // ---- Getters / Setters ----
 
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public User getUser1() {
-        return user1;
-    }
+    @JsonIgnore
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.REMOVE)
+    private List<Message> messages = new ArrayList<>();
 
-    public void setUser1(User user1) {
-        this.user1 = user1;
-    }
-
-    public User getUser2() {
-        return user2;
-    }
-
-    public void setUser2(User user2) {
-        this.user2 = user2;
-    }
-
-    public Long getListingId() {
-        return listingId;
-    }
-
-    public void setListingId(Long listingId) {
-        this.listingId = listingId;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
+@lombok.Getter
+@lombok.Setter
 public class UserResponse {
 
     private Long id;
@@ -18,27 +20,15 @@ public class UserResponse {
         this.imageUrl = imageUrl;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getFullName() {
+public String getFullName() {
         return fullName;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPhone() {
+public String getPhone() {
         return phone;
     }
 
-    public String getCity() {
-        return city;
-    }
-
-    public String getImageUrl() {
+public String getImageUrl() {
         return imageUrl;
     }
 }

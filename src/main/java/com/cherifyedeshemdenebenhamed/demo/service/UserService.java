@@ -1,21 +1,5 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.lang.NonNull;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
 import com.cherifyedeshemdenebenhamed.demo.configuration.JwtService;
 import com.cherifyedeshemdenebenhamed.demo.dto.LoginRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.LoginResponse;
@@ -36,7 +20,20 @@ import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReviewRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
-
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 @Service
 public class UserService {
 
@@ -91,6 +88,9 @@ public class UserService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        }
+        if (user.getStatus() == User.Status.BANNED) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This account is banned");
         }
         String token = jwtService.generateToken(user);
         return new LoginResponse("Login successful", token, user.getId(), user.getFullName(), user.getEmail(), user.getImageUrl(), user.getRole().toString());
@@ -230,7 +230,7 @@ public class UserService {
 
         List<Long> conversationIdsByListing = listingIds.isEmpty()
             ? List.of()
-            : conversationRepository.findByListingIdIn(listingIds)
+            : conversationRepository.findByListing_IdIn(listingIds)
                 .stream()
                 .map(Conversation::getId)
                 .toList();
@@ -269,7 +269,7 @@ public class UserService {
             messageRepository.deleteByConversation_IdIn(new ArrayList<>(allConversationIds));
         }
         if (!listingIds.isEmpty()) {
-            conversationRepository.deleteByListingIdIn(listingIds);
+            conversationRepository.deleteByListing_IdIn(listingIds);
         }
 
         messageRepository.deleteBySender_Id(userId);

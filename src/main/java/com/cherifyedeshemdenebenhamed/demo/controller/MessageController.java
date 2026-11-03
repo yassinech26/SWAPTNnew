@@ -1,6 +1,10 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.cherifyedeshemdenebenhamed.demo.model.Message;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.service.MessageService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,19 +17,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.cherifyedeshemdenebenhamed.demo.model.Message;
-import com.cherifyedeshemdenebenhamed.demo.model.User;
-import com.cherifyedeshemdenebenhamed.demo.service.MessageService;
-
-import jakarta.validation.Valid;
-
 @RestController
 @RequestMapping("/api/messages")
+@RequiredArgsConstructor
 public class MessageController {
 
-    @Autowired // Placé ici pour injecter le service correctement
-    private MessageService messageService;
+    private final MessageService messageService;
 
     // Méthode utilitaire pour récupérer l'utilisateur authentifié
     private User getCurrentAuthenticatedUser() {
@@ -48,13 +45,9 @@ public class MessageController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        Long currentUserId = currentUser.getId();  
-        
-        User sender = new User();
-        sender.setId(currentUserId);
 
         // Envoi du message via le service
-        Message savedMessage = messageService.sendMessage(conversationId, sender, message.getContent());
+        Message savedMessage = messageService.sendMessage(conversationId, currentUser, message.getContent());
         
         return new ResponseEntity<>(savedMessage, HttpStatus.CREATED);
     }

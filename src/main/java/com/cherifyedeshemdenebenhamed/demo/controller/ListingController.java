@@ -1,8 +1,16 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
+import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
+import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
+import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
+import com.cherifyedeshemdenebenhamed.demo.model.Listing;
+import com.cherifyedeshemdenebenhamed.demo.model.User;
+import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
+import com.cherifyedeshemdenebenhamed.demo.service.ListingImageStorageService;
+import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
+import jakarta.validation.Valid;
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,29 +32,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
-import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
-import com.cherifyedeshemdenebenhamed.demo.model.Listing;
-import com.cherifyedeshemdenebenhamed.demo.model.User;
-import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
-import com.cherifyedeshemdenebenhamed.demo.service.ListingImageStorageService;
-import com.cherifyedeshemdenebenhamed.demo.service.ListingService;
-
-import jakarta.validation.Valid;
-
 @RestController
 @RequestMapping("/api/listings")
+@RequiredArgsConstructor
 public class ListingController {
 
-    @Autowired
-    private ListingService listingService;
+    private final ListingService listingService;
 
-    @Autowired
-    private ListingImageStorageService listingImageStorageService;
+    private final ListingImageStorageService listingImageStorageService;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<Page<Listing>> getAllListings(
@@ -67,9 +62,6 @@ public class ListingController {
             Pageable pageable = PageRequest.of(page, size, Sort.by(validSortField).descending());
             Page<Listing> listings = listingService.getAllListingsPaginated(pageable);
             // Page object is never null, but check if content is empty
-            if (listings.getContent().isEmpty() && page == 0) {
-                throw new NotFoundException(" No items available right now. Check back soon!");
-            }
             return ResponseEntity.ok(listings);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid pagination parameters: page and size must be >= 0");
@@ -112,6 +104,9 @@ public class ListingController {
             throw new BadRequestException("Authentication required to create a listing");
         }
 
+        listing.setId(null);
+        listing.setCreatedAt(null);
+        listing.setStatus(Listing.ListingStatus.ACTIVE);
         List<String> storedImageUrls = listingImageStorageService.storeListingImages(images);
         listing.setImageUrls(storedImageUrls);
         listing.setImageUrl(storedImageUrls.get(0));
@@ -124,11 +119,16 @@ public class ListingController {
         Listing existingListing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("This item no longer exists or was removed."));
 
+        requireOwner(existingListing);
         existingListing.setTitle(listingDetails.getTitle());
         existingListing.setDescription(listingDetails.getDescription());
         existingListing.setPrice(listingDetails.getPrice());
         existingListing.setCategory(listingDetails.getCategory());
         existingListing.setStatus(listingDetails.getStatus());
+        existingListing.setBrand(listingDetails.getBrand());
+        existingListing.setSize(listingDetails.getSize());
+        existingListing.setCondition(listingDetails.getCondition());
+        existingListing.setLocation(listingDetails.getLocation());
 
         return ResponseEntity.ok(listingService.saveListing(existingListing));
     }
@@ -138,8 +138,9 @@ public class ListingController {
         if (id == null || id <= 0) {
             throw new BadRequestException("Invalid item ID. Cannot delete this item.");
         }
-        listingService.getListingById(id)
+        Listing listing = listingService.getListingById(id)
                 .orElseThrow(() -> new NotFoundException("This item no longer exists. It may have been already deleted."));
+        requireOwner(listing);
         listingService.deleteListing(id);
         return ResponseEntity.ok().build();
     }
@@ -178,5 +179,11 @@ public class ListingController {
             throw new NotFoundException(" No items found in the price range " + min + " - " + max + " TND. Try a wider price range.");
         }
         return ResponseEntity.ok(listings);
+    }
+    private void requireOwner(Listing listing) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof User user) || !listing.getOwner().getId().equals(user.getId())) {
+            throw new ForbiddenException("You can only modify your own listings");
+        }
     }
 }

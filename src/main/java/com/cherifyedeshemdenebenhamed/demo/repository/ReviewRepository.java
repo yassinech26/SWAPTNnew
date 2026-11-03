@@ -9,6 +9,7 @@ import com.cherifyedeshemdenebenhamed.demo.model.Review;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+    void deleteByListing_Id(Long listingId);
     List<Review> findByReviewedUser_Id(Long reviewedUserId);
 
     void deleteByReviewer_IdOrReviewedUser_Id(Long reviewerId, Long reviewedUserId);

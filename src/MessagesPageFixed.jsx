@@ -91,8 +91,7 @@ function Avatar({ src, size = 40, alt = "Avatar", style = {} }) {
 }
 
 
-export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversationFocus, clearConversationFocus }) {
-  const t = TRANSLATIONS[language];
+export function MessagesPage({ setPage, user, conversationFocus, clearConversationFocus }) {
   const [activeChat, setActiveChat] = useState(null);
   const [msgInput, setMsgInput] = useState("");
   const [userMessages, setUserMessages] = useState([]);
@@ -151,7 +150,7 @@ export function MessagesPage({ language, setPage, user, TRANSLATIONS, conversati
     };
     
     loadConversations();
-  }, [user?.id]);
+  }, [user?.id, conversationFocus]);
 
   useEffect(() => {
     if (!conversationFocus || userMessages.length === 0) return;

@@ -1,12 +1,5 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
@@ -17,18 +10,20 @@ import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.MessageRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ReportRepository;
-
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 @Service
+@RequiredArgsConstructor
 public class MessageService {
 
-    @Autowired
-    private MessageRepository messageRepository;
+    private final MessageRepository messageRepository;
 
-    @Autowired
-    private ConversationRepository conversationRepository;
+    private final ConversationRepository conversationRepository;
 
-    @Autowired
-    private ReportRepository reportRepository;
+    private final ReportRepository reportRepository;
 
     // Méthode pour envoyer un message
     public Message sendMessage(Long conversationId, User sender, String content) {
@@ -50,6 +45,10 @@ public class MessageService {
                 .orElseThrow(() -> new IllegalArgumentException("Conversation non trouvée"));
 
         // Créer un nouveau message
+        if (!conversation.getUser1().getId().equals(sender.getId()) && !conversation.getUser2().getId().equals(sender.getId())) {
+            throw new ForbiddenException("You are not a participant in this conversation");
+        }
+
         Message message = new Message();
         message.setContent(content);
         message.setSender(sender);

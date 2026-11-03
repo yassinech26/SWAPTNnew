@@ -1,5 +1,8 @@
 package com.cherifyedeshemdenebenhamed.demo.controller;
 
+import com.cherifyedeshemdenebenhamed.demo.exception.ForbiddenException;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import com.cherifyedeshemdenebenhamed.demo.dto.ReportDTO;
 import com.cherifyedeshemdenebenhamed.demo.exception.BadRequestException;
 import com.cherifyedeshemdenebenhamed.demo.exception.NotFoundException;
@@ -64,6 +67,9 @@ public class ReportController {
      */
     @GetMapping("/my")
     public List<ReportDTO> getReportsByUser(@RequestParam("userId") Long userId) {
+        if (!getCurrentAuthenticatedUser().getId().equals(userId)) {
+            throw new ForbiddenException("You can only view your own reports");
+        }
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             throw new NotFoundException("Utilisateur introuvable");
@@ -75,6 +81,7 @@ public class ReportController {
     /**
      * Récupérer un signalement spécifique par son ID
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/{id}")
     public ReportDTO getReportById(@PathVariable Long id) {
         Optional<ReportDTO> reportOpt = reportService.getReportById(id);
@@ -88,6 +95,7 @@ public class ReportController {
     /**
      * Récupérer les signalements par statut
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/status")
     public List<ReportDTO> getReportsByStatus(@RequestParam("status") String status) {
         try {
@@ -100,6 +108,7 @@ public class ReportController {
     /**
      * Récupérer les signalements par type
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/type")
     public List<ReportDTO> getReportsByType(@RequestParam("type") String type) {
         try {
@@ -112,6 +121,7 @@ public class ReportController {
     /**
      * Récupérer les signalements par type et statut
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/filter")
     public List<ReportDTO> getReportsByTypeAndStatus(@RequestParam("type") String type,
                                                      @RequestParam("status") String status) {
@@ -128,6 +138,7 @@ public class ReportController {
     /**
      * Récupérer les signalements concernant un élément spécifique
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/target")
     public List<ReportDTO> getReportsByTargetId(@RequestParam("targetId") Long targetId) {
         return reportService.getReportsByTargetId(targetId);
@@ -136,6 +147,7 @@ public class ReportController {
     /**
      * Mettre à jour le statut d'un signalement
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @PatchMapping("/{id}/status")
     public ReportDTO updateReportStatus(@PathVariable Long id,
                                         @RequestParam("status") String status) {

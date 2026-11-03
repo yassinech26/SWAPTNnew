@@ -1,5 +1,8 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
+import jakarta.validation.constraints.NotNull;
+@lombok.Getter
+@lombok.Setter
 public class CreateConversationRequest {
 
     @NotNull(message = "listingId is required")
@@ -9,19 +12,11 @@ public class CreateConversationRequest {
     private Long otherUserId;
 
     // Getters et setters
-    public Long getListingId() {
-        return listingId;
-    }
-
-    public void setListingId(Long listingId) {
+public void setListingId(Long listingId) {
         this.listingId = listingId;
     }
 
-    public Long getOtherUserId() {
-        return otherUserId;
-    }
-
-    public void setOtherUserId(Long otherUserId) {
+public void setOtherUserId(Long otherUserId) {
         this.otherUserId = otherUserId;
     }
 }

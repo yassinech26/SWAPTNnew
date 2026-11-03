@@ -1,5 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.dto;
 
+@lombok.Getter
+@lombok.Setter
 public class UserDTO {
 
     private Long id;
@@ -35,30 +37,21 @@ public class UserDTO {
     }
 
     // Getters et Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+public void setId(Long id) { this.id = id; }
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
+public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+public void setEmail(String email) { this.email = email; }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
+public void setPhone(String phone) { this.phone = phone; }
 
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
+public void setCity(String city) { this.city = city; }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
+public void setRating(Double rating) { this.rating = rating; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+public void setRole(String role) { this.role = role; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+public void setStatus(String status) { this.status = status; }
 }

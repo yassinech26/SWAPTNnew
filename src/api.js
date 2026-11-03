@@ -1,12 +1,10 @@
 // ─── API SERVICE LAYER ──────────────────────────────────────────────────────
 // Centralized API client for all backend communication with Spring Boot
 // Handles authentication, pagination, CRUD operations, and error handling
-// Backend runs on http://localhost:8081 with Neon PostgreSQL database
+// Backend runs on http://localhost:8081 with MySQL
 
 // Use full URL for CORS-enabled backend, or relative URL for proxy
-const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8081'
-  : 'https://api.swaptn.com'; // Update with production URL
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 // ─── TOKEN HELPERS ────────────────────────────────────────────────────────────
 
@@ -43,7 +41,7 @@ export function getCurrentUserEmail() {
 
 async function request(url, options = {}) {
   // Always use relative URL - Vite proxy handles routing in dev, production proxies handle prod
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}${url}`, {
     ...options,
     headers: { ...authHeaders(options.body), ...options.headers },
   });
@@ -56,7 +54,7 @@ async function request(url, options = {}) {
       const body = await res.json();
       errorMsg = body.message || body.error || JSON.stringify(body);
     } catch {
-      try { errorMsg = await res.text(); } catch {}
+      try { errorMsg = await res.text(); } catch { /* Keep the HTTP status if the response body cannot be read. */ }
     }
     console.error(`[REQUEST] Failed: ${res.status} - ${errorMsg}`);
     throw new Error(errorMsg);
@@ -78,7 +76,6 @@ export async function login(email, password) {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    console.log(`[LOGIN] Success:`, data);
     // data = { message, token, id, fullName, email, imageUrl }
     if (data?.token) setToken(data.token);
     return data;
@@ -306,4 +303,8 @@ export function isTokenExpired(token) {
 export function isLoggedIn() {
   const token = getToken();
   return token && !isTokenExpired(token);
+}
+
+export async function sendContactMessage(data) {
+  return request("/api/contact", { method: "POST", body: JSON.stringify(data) });
 }

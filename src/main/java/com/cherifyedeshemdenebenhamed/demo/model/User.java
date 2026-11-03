@@ -1,16 +1,7 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
-
-import java.util.Collection;
-import java.util.List;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -25,7 +17,14 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 @Entity
 @JsonIgnoreProperties({
     "authorities",
@@ -42,6 +41,8 @@ import jakarta.validation.constraints.Size;
 
         }
 )
+@Getter
+@Setter
 public class User implements UserDetails {
 
     // Primary key (auto-generated)
@@ -54,7 +55,6 @@ public class User implements UserDetails {
     @Size(max = 120)
     @Column( name = "full_name", nullable = false, length = 120)
     private String fullName;
-    //full name must be unique because we will use it as username for login (as per your diagram)
 
     // Email must be unique
     @NotBlank
@@ -104,31 +104,20 @@ public class User implements UserDetails {
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true, length = 20)
+    @Column(nullable = false, length = 20)
     private Role role = Role.USER;
-
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
 
     public enum Status {
         ACTIVE,
         BANNED
     }
-    //private String role = "USER";
-    // on ne utulise pas les roles pour le moment on va juste donner a tous les utilisateurs le role USER dans getAuthorities() et on verra plus tard comment faire pour les roles admin ou autre
+
+    @Override
+    public boolean isEnabled() { return status != Status.BANNED; }
 
     // --- Constructors ---
     public User() {}
 
-    // --- Getters/Setters (keep simple and explicit) ---
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
 
     @Override
     @JsonIgnore
@@ -145,25 +134,6 @@ public class User implements UserDetails {
     @Override
     @JsonIgnore
     public String getPassword() { return password; }
-
-    
-
-    public void setPassword(String password) { this.password = password; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
-
-    public String getGoogleId() { return googleId; }
-    public void setGoogleId(String googleId) { this.googleId = googleId; }
 
     public Role getRole() {
         if (role == null) {
@@ -190,4 +160,36 @@ public class User implements UserDetails {
             rating = 0.0;
         }
     }
+    @JsonIgnore
+    @OneToMany(mappedBy = "owner")
+    private List<Listing> listings = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user1")
+    private List<Conversation> conversationsAsUser1 = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user2")
+    private List<Conversation> conversationsAsUser2 = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "sender")
+    private List<Message> sentMessages = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reviewer")
+    private List<Review> writtenReviews = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reviewedUser")
+    private List<Review> receivedReviews = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reportedBy")
+    private List<Report> submittedReports = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reportedUser")
+    private List<Report> receivedReports = new ArrayList<>();
+
 }

@@ -1,10 +1,5 @@
 package com.cherifyedeshemdenebenhamed.demo.service;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.cherifyedeshemdenebenhamed.demo.dto.ConversationResponse;
 import com.cherifyedeshemdenebenhamed.demo.dto.CreateConversationRequest;
 import com.cherifyedeshemdenebenhamed.demo.dto.UserResponse;
@@ -16,8 +11,11 @@ import com.cherifyedeshemdenebenhamed.demo.model.User;
 import com.cherifyedeshemdenebenhamed.demo.repository.ConversationRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.ListingRepository;
 import com.cherifyedeshemdenebenhamed.demo.repository.UserRepository;
-
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 @Service
+@Transactional(readOnly = true)
 public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
@@ -68,16 +66,22 @@ public class ConversationService {
         User otherUser = userRepository.findById(otherUserId)
                 .orElseThrow(() -> new NotFoundException("Other user not found."));
 
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new NotFoundException("Listing not found"));
+        if (!listing.getOwner().getId().equals(currentUserId) && !listing.getOwner().getId().equals(otherUserId)) {
+            throw new BadRequestException("A conversation must include the listing owner");
+        }
+
         Long minId = Math.min(currentUserId, otherUserId);
         Long maxId = Math.max(currentUserId, otherUserId);
 
         // Anti-doublon: si existe déjà, on la retourne
         return conversationRepository
-                .findByListingIdAndUser1_IdAndUser2_Id(req.getListingId(), minId, maxId)
+                .findByListing_IdAndUser1_IdAndUser2_Id(req.getListingId(), minId, maxId)
                 .map(c -> toResponse(c, currentUserId))
                 .orElseGet(() -> {
                     Conversation c = new Conversation();
-                    c.setListingId(listingId);
+                    c.setListing(listing);
 
                     // Normalisation user1/user2 (min/max)
                     if (currentUserId.equals(minId)) {

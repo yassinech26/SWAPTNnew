@@ -1,11 +1,6 @@
 package com.cherifyedeshemdenebenhamed.demo.model;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.hibernate.annotations.CreationTimestamp;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -18,14 +13,22 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 @Entity
 @Table(name = "listings")
+@Getter
+@Setter
 public class Listing {
 
     @Id
@@ -56,7 +59,7 @@ public class Listing {
     private String size;
 
     @Size(max = 20)
-    @Column(length = 20)
+    @Column(name = "item_condition", length = 20)
     private String condition;
 
     @Size(max = 100)
@@ -78,8 +81,8 @@ public class Listing {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @ManyToOne
-    @JoinColumn(name = "owner_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     public enum ListingStatus {
@@ -88,116 +91,21 @@ public class Listing {
         SOLD
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public ListingStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ListingStatus status) {
-        this.status = status;
-    }
-
-    public String getBrand() {
-        return brand;
-    }
-
-    public void setBrand(String brand) {
-        this.brand = brand;
-    }
-
-    public String getSize() {
-        return size;
-    }
-
-    public void setSize(String size) {
-        this.size = size;
-    }
-
-    public String getCondition() {
-        return condition;
-    }
-
-    public void setCondition(String condition) {
-        this.condition = condition;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
 
     public void setImageUrls(List<String> imageUrls) {
         this.imageUrls = (imageUrls == null) ? new ArrayList<>() : imageUrls;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    @JsonIgnore
+    @OneToMany(mappedBy = "listing")
+    private List<Conversation> conversations = new ArrayList<>();
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    @JsonIgnore
+    @OneToMany(mappedBy = "listing")
+    private List<Review> reviews = new ArrayList<>();
 
-    public User getOwner() {
-        return owner;
-    }
+    @JsonIgnore
+    @OneToMany(mappedBy = "listing")
+    private List<Report> reports = new ArrayList<>();
 
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
 }

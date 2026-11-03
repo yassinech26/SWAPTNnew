@@ -1,8 +1,8 @@
 ﻿// ─── SWAPTN MAIN APPLICATION ───────────────────────────────────────────────────────
 // Central React component managing all pages, state, and UI logic
 // Features: Browse listings with pagination, create/edit listings, messaging, user auth
-// Backend: Spring Boot API on http://localhost:8081 with Neon PostgreSQL database
-import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+// Backend: Spring Boot API on http://localhost:8081 with MySQL
+import React, { useState, useEffect } from "react";
 import * as api from "./api";
 import { MessagesPage as MessagesPageComponent } from "./MessagesPageFixed";
 import { ProtectedAdminRoute } from "./ProtectedAdminRoute";
@@ -37,8 +37,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // ─── CONTEXT ─────────────────────────────────────────────────────────────────
-export const AppContext = createContext();
-export const useApp = () => useContext(AppContext);
+import { AppContext, useApp } from "./AppContext";
 
 // ─── FILTER ENUMS ──────────────────────────────────────────────────────────────
 const CATEGORIES = ["All", "Tops", "Bottoms", "Dresses", "Jackets", "Shoes", "Bags", "Accessories"];
@@ -796,7 +795,7 @@ function ItemCard({ item, onClick }) {
 
 // ─── PAGES ────────────────────────────────────────────────────────────────────
 
-function HomePage({ setPage, setSelectedItem, language }) {
+function HomePage({ setPage, language }) {
   const t = TRANSLATIONS[language];
   return (
     <div style={{ animation: "fadeIn 0.4s ease" }}>
@@ -920,8 +919,8 @@ function HomePage({ setPage, setSelectedItem, language }) {
   );
 }
 
-function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, listings = [], loading = false, searchVal = "", setSearchVal, hasMore = true, setCurrentPage }) {
-  const t = TRANSLATIONS[language];
+function BrowsePage({ setPage, setSelectedItem, selectedCategory, listings = [], loading = false, searchVal = "", setSearchVal, hasMore = true, setCurrentPage }) {
+
   const { listingError } = useApp();
   const [activeCategory, setActiveCategory] = useState(selectedCategory || "All");
   const [sortBy, setSortBy] = useState("newest");
@@ -1132,8 +1131,8 @@ function BrowsePage({ setPage, setSelectedItem, selectedCategory, language, list
   );
 }
 
-function ItemPage({ item, setPage, setSelectedSeller, language }) {
-  const t = TRANSLATIONS[language];
+function ItemPage({ item, setPage, setSelectedSeller }) {
+
   const { wishlist, setWishlist, user, setLoginNotice, setConversationFocus } = useApp();
   const [liked, setLiked] = useState(wishlist.some(i => i.id === item.id));
   const [activeImg, setActiveImg] = useState(0);
@@ -1151,10 +1150,6 @@ function ItemPage({ item, setPage, setSelectedSeller, language }) {
     location: item?.sellerCity || sellerObj?.city || item?.location || "Tunisia" 
   };
   
-  // Debug log to see what we're receiving
-  useEffect(() => {
-    console.log("Item data:", { item, sellerObj, seller, avatar: seller.avatar });
-  }, [item]);
   
   const imgs = (Array.isArray(item?.imageUrls) && item.imageUrls.length > 0
     ? item.imageUrls
@@ -1639,9 +1634,9 @@ function SellPage({ setPage, language }) {
   );
 }
 
-function WishlistPage({ setPage, setSelectedItem, language }) {
-  const t = TRANSLATIONS[language];
-  const { wishlist, setWishlist } = useApp();
+function WishlistPage({ setPage, setSelectedItem }) {
+
+  const { wishlist } = useApp();
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
       <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
@@ -1666,8 +1661,8 @@ function WishlistPage({ setPage, setSelectedItem, language }) {
 
 //  MessagesPage is now imported from MessagesPage.jsx
 
-function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [] }) {
-  const t = TRANSLATIONS[language];
+function ProfilePage({ setPage, setSelectedItem, setUser, listings = [] }) {
+
   const { user } = useApp();
   const [tab, setTab] = useState("listings");
   const [editMode, setEditMode] = useState(false);
@@ -1816,14 +1811,13 @@ function ProfilePage({ setPage, setSelectedItem, setUser, language, listings = [
   );
 }
 
-function SellerPage({ setPage, sellerData, language }) {
-  const t = TRANSLATIONS[language];
+function SellerPage({ setPage, sellerData }) {
+
   const { user } = useApp();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const seller = sellerData || { name: "Seller", avatar: null, bio: "Seller profile", location: "Tunisia" };
-  const items = [];
   const canReportSeller = Boolean(seller?.id) && (!user || Number(user.id) !== Number(seller.id));
 
   return (
@@ -1967,8 +1961,8 @@ function SellerPage({ setPage, sellerData, language }) {
   );
 }
 
-function LoginPage({ setPage, language }) {
-  const t = TRANSLATIONS[language];
+function LoginPage({ setPage }) {
+
   const { setUser, loginNotice, setLoginNotice } = useApp();
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ email: "", password: "", name: "" });
@@ -2159,14 +2153,16 @@ function LoginPage({ setPage, language }) {
   );
 }
 
-function NotificationsPage({ language, setPage }) {
-  const t = TRANSLATIONS[language];
+function NotificationsPage({ setPage }) {
+  const notifs = [];
+
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px", animation: "fadeIn 0.4s ease" }}>
       <button onClick={() => setPage("home")} style={{ background: "none", border: "none", color: "var(--teal)", fontWeight: 600, marginBottom: 24, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>← Back</button>
       <h1 className="page-header">Notifications</h1>
       <div className="card" style={{ overflow: "hidden" }}>
+        {notifs.length === 0 && <p style={{ padding: 20 }}>You have no notifications.</p>}
         {notifs.map((n, i) => (
           <div key={i} style={{
             display: "flex", gap: 16, padding: 20, alignItems: "center",
@@ -3489,11 +3485,15 @@ export function ContactUsPage({ setPage }) {
 
   const valid = Object.values(form).every(Boolean);
 
-  const submit = () => {
+  const submit = async () => {
     if (!valid) return;
-    console.log("Sent:", form);
-    setSent(true);
-    setTimeout(() => { setSent(false); setForm({ name: "", email: "", subject: "", message: "" }); }, 4000);
+    try {
+      await api.sendContactMessage(form);
+      setSent(true);
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      alert(err.message || "Could not send your message. Please try again.");
+    }
   };
 
   return (
@@ -3666,14 +3666,34 @@ export function SafeBuyingPage({ setPage }) {
 export function ReportIssuePage({ setPage }) {
   const [form, setForm] = useState({ issueType: "", listingId: "", description: "", email: "" });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const { user, setLoginNotice } = useApp();
 
-  const valid = form.issueType && form.description && form.email;
+  const valid = form.issueType && form.description && Number(form.listingId.replace(/^#/, "")) > 0;
 
-  const submit = () => {
-    if (!valid) return;
-    console.log("Report:", form);
-    setSent(true);
-    setTimeout(() => { setSent(false); setForm({ issueType: "", listingId: "", description: "", email: "" }); }, 4000);
+  const submit = async () => {
+    if (!valid || submitting) return;
+    if (!user) {
+      setLoginNotice("Please sign in to submit a report.");
+      setPage("login");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.createReport({
+        type: "LISTING",
+        targetId: Number(form.listingId.replace(/^#/, "")),
+        reason: `${form.issueType}: ${form.description}`,
+      });
+      setSent(true);
+      setForm({ issueType: "", listingId: "", description: "", email: "" });
+    } catch (err) {
+      setError(err.message || "Could not submit your report. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const types = ["Counterfeit / Fake Item", "Item Not As Described", "Damaged Item", "Missing Item", "Fraudulent Seller", "Offensive Content", "Other"];
@@ -3686,6 +3706,7 @@ export function ReportIssuePage({ setPage }) {
       <p className="swp-lead">Help us keep SwapTn safe. We investigate every report seriously and respond within 24–48 hours.</p>
 
       <div className="swp-card">
+        {error && <div role="alert" className="swp-banner">{error}</div>}
         {sent && (
           <div className="swp-banner swp-banner-success" style={{ marginBottom: 24 }}>
             Report submitted — our team will investigate within 24–48 hours.
@@ -3702,7 +3723,7 @@ export function ReportIssuePage({ setPage }) {
           </div>
 
           <div>
-            <label className="swp-label">Listing ID <span style={{ color: "var(--muted)", fontWeight: 400 }}>(optional)</span></label>
+            <label className="swp-label">Listing ID <span style={{ color: "var(--muted)", fontWeight: 400 }}>(required)</span></label>
             <input className="swp-input" placeholder="e.g. #12345" value={form.listingId} onChange={e => setForm({ ...form, listingId: e.target.value })} />
           </div>
 
@@ -3720,8 +3741,8 @@ export function ReportIssuePage({ setPage }) {
             Tip: Include screenshots or photos if you have them — it speeds up investigation significantly.
           </div>
 
-          <button className="swp-btn swp-btn-primary swp-btn-full" disabled={!valid} onClick={submit}>
-            Submit Report {Icon.arrow}
+          <button className="swp-btn swp-btn-primary swp-btn-full" disabled={!valid || submitting} onClick={submit}>
+            {submitting ? "Submitting?" : "Submit Report"} {Icon.arrow}
           </button>
         </div>
 
@@ -3744,8 +3765,8 @@ export function ReportIssuePage({ setPage }) {
   );
 }
 
-function Footer({ setPage, language }) {
-  const t = TRANSLATIONS[language];
+function Footer({ setPage }) {
+
 
   const getPageRoute = (linkName) => {
     const linkMap = {

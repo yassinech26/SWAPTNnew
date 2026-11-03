@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { useApp } from "./App";
+import { useApp } from "./AppContext";
 
 export function ProtectedAdminRoute({ children }) {
   const { user, setPage } = useApp();
